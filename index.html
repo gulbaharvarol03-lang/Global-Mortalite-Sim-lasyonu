@@ -1,0 +1,868 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Tabu Oyunu</title>
+    <style>
+/* (Önceki stiller buraya kopyalanacak ve yenileri eklenecek) */
+:root {
+    --primary: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.5);
+    --secondary: #ec4899;
+    --secondary-glow: rgba(236, 72, 153, 0.5);
+    --bg-dark: #0f172a;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+body.theme-light {
+    --primary: #c026d3;
+    --primary-glow: rgba(192, 38, 211, 0.5);
+    --secondary: #0284c7;
+    --secondary-glow: rgba(2, 132, 199, 0.5);
+    --bg-dark: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(192, 38, 211, 0.4);
+    --text-main: #0f172a;
+    --text-muted: #334155;
+    --btn-text: #0f172a;
+}
+
+body.theme-purple {
+    --primary: #a855f7;
+    --primary-glow: rgba(168, 85, 247, 0.5);
+    --secondary: #ec4899;
+    --secondary-glow: rgba(236, 72, 153, 0.5);
+    --bg-dark: #2e1065;
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(168, 85, 247, 0.2);
+    --text-main: #faf5ff;
+    --text-muted: #d8b4fe;
+}
+
+body.theme-red {
+    --primary: #ef4444;
+    --primary-glow: rgba(239, 68, 68, 0.5);
+    --secondary: #f59e0b;
+    --secondary-glow: rgba(245, 158, 11, 0.5);
+    --bg-dark: #450a0a;
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(239, 68, 68, 0.2);
+    --text-main: #fef2f2;
+    --text-muted: #fca5a5;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.background-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-dark);
+    z-index: -1;
+    transition: background 0.5s ease;
+}
+
+.background-animation::before {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: var(--primary);
+    filter: blur(150px);
+    border-radius: 50%;
+    top: 10%;
+    left: 10%;
+    opacity: 0.4;
+    animation: move 20s infinite alternate;
+}
+
+.background-animation::after {
+    content: '';
+    position: absolute;
+    width: 350px;
+    height: 350px;
+    background: var(--secondary);
+    filter: blur(150px);
+    border-radius: 50%;
+    bottom: 10%;
+    right: 10%;
+    opacity: 0.4;
+    animation: move 25s infinite alternate-reverse;
+}
+
+@keyframes move {
+    from { transform: translate(0, 0); }
+    to { transform: translate(100px, 100px); }
+}
+
+.container {
+    width: 100%;
+    max-width: 450px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    gap: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.score-board, .timer-container {
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+}
+
+.label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.text-primary {
+    color: var(--secondary);
+    font-weight: 800;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.value {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.timer-container {
+    position: relative;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    padding: 0;
+    justify-content: center;
+}
+
+.card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 3rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 100%;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    color: var(--text-main);
+}
+
+.forbidden-words {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.line {
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--glass-border), transparent);
+    margin: 1rem 0;
+}
+
+.forbidden {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    transition: color 0.3s ease;
+}
+
+footer {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 1.25rem;
+    border: none;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--btn-text, white);
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+    box-shadow: 0 10px 15px -3px var(--primary-glow);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--secondary) 0%, #db2777 100%);
+    box-shadow: 0 10px 15px -3px var(--secondary-glow);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.5);
+}
+
+.btn-start {
+    background: rgba(255, 255, 255, 0.1);
+    width: 100%;
+}
+
+.btn-start:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 3rem;
+    width: 90%;
+    max-width: 400px;
+    z-index: 100;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.final-score {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.final-score strong {
+    font-size: 3rem;
+    color: var(--primary);
+}
+
+/* SETTINGS SCREEN STYLES */
+.setup-container {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    gap: 1.5rem;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.setup-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.setup-container::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 4px;
+}
+
+.setup-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+}
+
+.setup-group h3 {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+}
+
+.option-card {
+    position: relative;
+    cursor: pointer;
+}
+
+.option-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.option-card span {
+    display: block;
+    padding: 0.75rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    transition: all 0.3s ease;
+}
+
+.option-card input[type="radio"]:checked + span {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.team-names-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.team-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: white;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.team-input:focus {
+    border-color: var(--primary);
+}
+
+.team-result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+}
+
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="container">
+        <!-- KURULUM EKRANI -->
+        <div id="setup-screen" class="glass setup-container">
+            <h1>Oyun Ayarları</h1>
+            
+            <div class="setup-group">
+                <h3>Süre</h3>
+                <div class="options-grid">
+                    <label class="option-card"><input type="radio" name="duration" value="60" checked> <span>1 Dk</span></label>
+                    <label class="option-card"><input type="radio" name="duration" value="90"> <span>1.5 Dk</span></label>
+                    <label class="option-card"><input type="radio" name="duration" value="120"> <span>2 Dk</span></label>
+                </div>
+            </div>
+
+            <div class="setup-group">
+                <h3>Zorluk</h3>
+                <div class="options-grid">
+                    <label class="option-card"><input type="radio" name="difficulty" value="kolay" checked> <span>Kolay</span></label>
+                    <label class="option-card"><input type="radio" name="difficulty" value="orta"> <span>Orta</span></label>
+                    <label class="option-card"><input type="radio" name="difficulty" value="zor"> <span>Zor</span></label>
+                </div>
+            </div>
+
+            <div class="setup-group">
+                <h3>Mod</h3>
+                <div class="options-grid">
+                    <label class="option-card"><input type="radio" name="mode" value="serbest" checked> <span>Serbest</span></label>
+                    <label class="option-card"><input type="radio" name="mode" value="takim"> <span>Takımlı</span></label>
+                </div>
+            </div>
+
+            <div class="setup-group">
+                <h3>Tema</h3>
+                <div class="options-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <label class="option-card"><input type="radio" name="theme" value="theme-dark" checked> <span style="background:#0f172a; border-color:#6366f1;">Koyu Mod</span></label>
+                    <label class="option-card"><input type="radio" name="theme" value="theme-light"> <span style="background:linear-gradient(45deg, #fce7f3, #e0f2fe); color:#0f172a; border-color:#d946ef;">Açık Mod</span></label>
+                    <label class="option-card"><input type="radio" name="theme" value="theme-purple"> <span style="background:#4c1d95; border-color:#d946ef;">Mor Mod</span></label>
+                    <label class="option-card"><input type="radio" name="theme" value="theme-red"> <span style="background:#991b1b; border-color:#fca5a5;">Kırmızı Mod</span></label>
+                </div>
+            </div>
+
+            <div id="team-setup" class="setup-group hidden">
+                <h3>Takım Sayısı</h3>
+                <div class="options-grid">
+                    <label class="option-card"><input type="radio" name="teamCount" value="2" checked> <span>2 Takım</span></label>
+                    <label class="option-card"><input type="radio" name="teamCount" value="3"> <span>3 Takım</span></label>
+                    <label class="option-card"><input type="radio" name="teamCount" value="4"> <span>4 Takım</span></label>
+                </div>
+                <div id="team-names" class="team-names-grid">
+                    <!-- Dinamik eklenecek -->
+                </div>
+            </div>
+
+            <button id="apply-setup-btn" class="btn btn-primary glass">OYUNA BAŞLA</button>
+        </div>
+
+        <!-- OYUN EKRANI -->
+        <div id="game-screen" class="hidden" style="display: flex; flex-direction: column; width: 100%; height: 100%; gap: 2rem;">
+            <header>
+                <div class="score-board glass">
+                    <span id="active-team-label" class="label text-primary" style="display: none;">TAKIM 1</span>
+                    <span class="label">SKOR</span>
+                    <span id="score" class="value">0</span>
+                </div>
+                <div class="timer-container glass">
+                    <div id="timer-ring-progress"></div>
+                    <span id="timer" class="value">60</span>
+                </div>
+            </header>
+
+            <main style="flex: 1; display: flex;">
+                <div id="game-card" class="card glass">
+                    <div class="card-front">
+                        <h1 id="main-word">BAŞLA</h1>
+                        <div class="forbidden-words">
+                            <div class="line"></div>
+                            <p class="forbidden" id="forbidden-1">Hazır mısın?</p>
+                            <p class="forbidden" id="forbidden-2">Kelimeyi Anlat</p>
+                            <p class="forbidden" id="forbidden-3">Yarış başlasın!</p>
+                            <p class="forbidden" id="forbidden-4"></p>
+                            <p class="forbidden" id="forbidden-5"></p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer>
+                <div class="controls">
+                    <button id="pass-btn" class="btn btn-secondary glass">PAS</button>
+                    <button id="correct-btn" class="btn btn-primary glass">DOĞRU</button>
+                    <button id="tabu-btn" class="btn btn-danger glass">TABU</button>
+                    <button id="instant-end-btn" class="btn btn-start glass" style="background: rgba(239, 68, 68, 0.2);">BİTİR</button>
+                </div>
+                <button id="start-btn" class="btn btn-start glass">TURU BAŞLAT</button>
+                <button id="end-game-btn" class="btn btn-start glass" style="margin-top: 10px; background: rgba(239, 68, 68, 0.2);">SONUÇLARI GÖR VE BİTİR</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- TUR/OYUN BİTİŞ MODALI -->
+    <div id="game-over" class="modal glass hidden">
+        <h2 id="modal-title">Süre Bitti!</h2>
+        <div class="final-score" id="scores-container">
+            <!-- Skorlar buraya dinamik veya tekli gelecek -->
+        </div>
+        <button id="next-turn-btn" class="btn btn-primary glass hidden">SIRADAKİ TAKIM</button>
+        <button id="restart-btn" class="btn btn-start glass">ANA MENÜYE DÖN</button>
+    </div>
+
+    <script>
+const wordDatabase = {
+    kolay: [
+        { main: "ELMA", forbidden: ["Meyve", "Kırmızı", "Amasya"] },
+        { main: "DENİZ", forbidden: ["Su", "Mavi", "Yüzmek"] },
+        { main: "GÜNEŞ", forbidden: ["Sıcak", "Yaz", "Sarı"] },
+        { main: "ARABA", forbidden: ["Tekerlek", "Motor", "Ulaşım"] },
+        { main: "KEDİ", forbidden: ["Miyav", "Hayvan", "Pati"] },
+        { main: "KALEM", forbidden: ["Yazı", "Kurşun", "Tükenmez"] },
+        { main: "MASA", forbidden: ["Sandalye", "Ayak", "Yemek"] },
+        { main: "KAPI", forbidden: ["Pencere", "Kilit", "Açmak"] },
+        { main: "AYAKKABI", forbidden: ["Ayak", "Giymek", "Bağcık"] },
+        { main: "SAAT", forbidden: ["Zaman", "Akrep", "Yelkovan"] },
+        { main: "SU", forbidden: ["İçmek", "Sıvı", "Şişe"] },
+        { main: "EV", forbidden: ["Bina", "Oda", "Yaşamak"] }
+    ],
+    orta: [
+        { main: "TELEFON", forbidden: ["Akıllı", "Aramak", "Mesaj", "İletişim"] },
+        { main: "BİLGİSAYAR", forbidden: ["Klavye", "Mouse", "Ekran", "İnternet"] },
+        { main: "KİTAP", forbidden: ["Okumak", "Sayfa", "Yazar", "Kütüphane"] },
+        { main: "FUTBOL", forbidden: ["Top", "Kale", "Maç", "Gol"] },
+        { main: "KAHVE", forbidden: ["Fincan", "Sıcak", "Kafein", "İçecek"] },
+        { main: "GÖZLÜK", forbidden: ["Görmek", "Çerçeve", "Cam", "Takmak"] },
+        { main: "ŞEMSİYE", forbidden: ["Yağmur", "Islanmak", "Açmak", "Korumak"] },
+        { main: "TELEVİZYON", forbidden: ["İzlemek", "Ekran", "Kumanda", "Kanal"] },
+        { main: "BİSİKLET", forbidden: ["Tekerlek", "Pedal", "Sürmek", "Taşıt"] },
+        { main: "ÇİKOLATA", forbidden: ["Tatlı", "Kakao", "Yemek", "Kahverengi"] },
+        { main: "FOTOĞRAF", forbidden: ["Çekmek", "Kamera", "Poz", "Albüm"] },
+        { main: "ORMAN", forbidden: ["Ağaç", "Yeşil", "Doğa", "Hayvan"] }
+    ],
+    zor: [
+        { main: "RÖPDEŞAMBIR", forbidden: ["Giyinmek", "Ev", "Sabahlık", "Kumaş", "Erkek"] },
+        { main: "MİMARİ", forbidden: ["Bina", "Tasarım", "Mühendis", "Yapı", "Çizim"] },
+        { main: "FELSEFE", forbidden: ["Düşünce", "Sokrates", "Bilim", "Sorgulamak", "Akıl"] },
+        { main: "METABOLİZMA", forbidden: ["Vücut", "Enerji", "Hücre", "Yakmak", "Sistem"] },
+        { main: "PSİKOLOJİ", forbidden: ["Ruh", "İnsan", "Beyin", "Bilinç", "Terapi"] },
+        { main: "ALGORİTMA", forbidden: ["Kod", "Matematik", "Yazılım", "Adım", "Çözüm"] },
+        { main: "PARADOKS", forbidden: ["Çelişki", "Mantık", "İmkansız", "Düşünce", "Felsefe"] },
+        { main: "SENKRONİZASYON", forbidden: ["Eşzamanlı", "Uyum", "Birlikte", "Zaman", "Düzen"] },
+        { main: "HALÜSİNASYON", forbidden: ["Görmek", "Hayal", "Gerçek", "İllüzyon", "Sanrı"] },
+        { main: "İNOVASYON", forbidden: ["Yenilik", "İcat", "Gelişim", "Fikir", "Teknoloji"] },
+        { main: "EMPATİ", forbidden: ["Duygu", "Anlamak", "İnsan", "Karşı", "Psikoloji"] },
+        { main: "MANİPÜLASYON", forbidden: ["Yönlendirmek", "İnsan", "Akıl", "Etki", "Kandırmak"] }
+    ]
+};
+
+// Ayar Değişkenleri
+let selectedDuration = 60;
+let selectedDifficulty = 'kolay';
+let gameMode = 'serbest';
+let teamCount = 2;
+
+// Oyun İçi Durum
+let currentWordPool = [];
+let currentWordIndex = 0;
+let timeLeft = 60;
+let timerId = null;
+
+let score = 0; // Serbest mode
+let teams = []; // [{name: 'A', score: 0}]
+let currentTeamIndex = 0;
+
+// Elementler: Kurulum
+const setupScreen = document.getElementById('setup-screen');
+const gameScreen = document.getElementById('game-screen');
+const modeRadios = document.getElementsByName('mode');
+const durationRadios = document.getElementsByName('duration');
+const diffRadios = document.getElementsByName('difficulty');
+const teamCountRadios = document.getElementsByName('teamCount');
+const teamSetupGroup = document.getElementById('team-setup');
+const teamNamesDiv = document.getElementById('team-names');
+const applySetupBtn = document.getElementById('apply-setup-btn');
+
+// Elementler: Oyun
+const mainWordEl = document.getElementById('main-word');
+const forbiddenEls = [
+    document.getElementById('forbidden-1'),
+    document.getElementById('forbidden-2'),
+    document.getElementById('forbidden-3'),
+    document.getElementById('forbidden-4'),
+    document.getElementById('forbidden-5')
+];
+const scoreEl = document.getElementById('score');
+const activeTeamLabel = document.getElementById('active-team-label');
+const timerEl = document.getElementById('timer');
+const startBtn = document.getElementById('start-btn');
+const passBtn = document.getElementById('pass-btn');
+const correctBtn = document.getElementById('correct-btn');
+const tabuBtn = document.getElementById('tabu-btn');
+const endGameBtn = document.getElementById('end-game-btn');
+const instantEndBtn = document.getElementById('instant-end-btn');
+const controls = document.querySelector('.controls');
+
+// Elementler: Modal
+const gameOverModal = document.getElementById('game-over');
+const modalTitle = document.getElementById('modal-title');
+const scoresContainer = document.getElementById('scores-container');
+const nextTurnBtn = document.getElementById('next-turn-btn');
+const restartBtn = document.getElementById('restart-btn');
+
+// UI Dinamikleri (Kurulum Ekranı)
+function renderTeamInputs(count) {
+    teamNamesDiv.innerHTML = '';
+    for(let i=1; i<=count; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'team-input';
+        input.placeholder = `Takım ${i} Adı...`;
+        input.id = `input-team-${i}`;
+        teamNamesDiv.appendChild(input);
+    }
+}
+
+modeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        if(e.target.value === 'takim') {
+            teamSetupGroup.classList.remove('hidden');
+            renderTeamInputs(teamCount);
+        } else {
+            teamSetupGroup.classList.add('hidden');
+        }
+    });
+});
+
+teamCountRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        teamCount = parseInt(e.target.value);
+        renderTeamInputs(teamCount);
+    });
+});
+
+// Ayarları Onaylama ve Başlama
+applySetupBtn.addEventListener('click', () => {
+    // Seçimleri al
+    selectedDuration = parseInt(document.querySelector('input[name="duration"]:checked').value);
+    selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    gameMode = document.querySelector('input[name="mode"]:checked').value;
+    
+    // Tema Uygula
+    const selectedTheme = document.querySelector('input[name="theme"]:checked').value;
+    document.body.className = selectedTheme === 'theme-dark' ? '' : selectedTheme;
+
+    currentWordPool = [...wordDatabase[selectedDifficulty]];
+
+    if(gameMode === 'takim') {
+        teams = [];
+        for(let i=1; i<=teamCount; i++) {
+            let tName = document.getElementById(`input-team-${i}`).value || `Takım ${i}`;
+            teams.push({ name: tName, score: 0 });
+        }
+        currentTeamIndex = 0;
+        activeTeamLabel.style.display = 'block';
+    } else {
+        score = 0;
+        activeTeamLabel.style.display = 'none';
+    }
+
+    setupScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    controls.classList.add('hidden');
+    startBtn.classList.remove('hidden');
+    
+    updateScoreBoardUI();
+    timerEl.textContent = selectedDuration;
+});
+
+function updateScoreBoardUI() {
+    if(gameMode === 'takim') {
+        activeTeamLabel.textContent = teams[currentTeamIndex].name;
+        scoreEl.textContent = teams[currentTeamIndex].score;
+    } else {
+        scoreEl.textContent = score;
+    }
+}
+
+function updateCard() {
+    if(currentWordPool.length === 0) {
+        // Kelimeler bitince kelimeleri baştan yükleyip karıştır
+        currentWordPool = [...wordDatabase[selectedDifficulty]];
+    }
+    currentWordIndex = Math.floor(Math.random() * currentWordPool.length);
+    const word = currentWordPool[currentWordIndex];
+    
+    mainWordEl.textContent = word.main;
+    forbiddenEls.forEach((el, i) => {
+        if(i < word.forbidden.length) {
+            el.textContent = word.forbidden[i];
+            el.style.display = 'block';
+        } else {
+            el.textContent = '';
+            el.style.display = 'none';
+        }
+    });
+    
+    const card = document.getElementById('game-card');
+    card.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+        card.style.transform = 'scale(1)';
+    }, 100);
+}
+
+function nextWord() {
+    currentWordPool.splice(currentWordIndex, 1); // Çıkan kelimeyi havuzdan çıkar
+    updateCard();
+}
+
+function startGameTurn() {
+    timeLeft = selectedDuration;
+    updateScoreBoardUI();
+    timerEl.textContent = timeLeft;
+    
+    startBtn.classList.add('hidden');
+    endGameBtn.classList.add('hidden');
+    controls.classList.remove('hidden');
+    gameOverModal.classList.add('hidden');
+    
+    nextWord();
+    
+    timerId = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+            endTurn();
+        }
+    }, 1000);
+}
+
+function updateScore(diff) {
+    if(gameMode === 'takim') {
+        teams[currentTeamIndex].score += diff;
+    } else {
+        score += diff;
+    }
+    updateScoreBoardUI();
+}
+
+correctBtn.addEventListener('click', () => {
+    updateScore(1);
+    nextWord();
+});
+
+passBtn.addEventListener('click', () => {
+    nextWord();
+});
+
+tabuBtn.addEventListener('click', () => {
+    updateScore(-1);
+    nextWord();
+});
+
+function endTurn() {
+    clearInterval(timerId);
+    controls.classList.add('hidden');
+    gameOverModal.classList.remove('hidden');
+    
+    scoresContainer.innerHTML = '';
+    
+    if (gameMode === 'takim') {
+        modalTitle.textContent = "Süre Bitti!";
+        // Tüm takımların skorlarını listele
+        teams.forEach(t => {
+            scoresContainer.innerHTML += `
+                <div class="team-result-row">
+                    <span>${t.name}</span>
+                    <strong>${t.score}</strong>
+                </div>
+            `;
+        });
+        
+        nextTurnBtn.classList.remove('hidden');
+        restartBtn.textContent = "OYUNU BİTİR";
+    } else {
+        modalTitle.textContent = "Oyun Bitti!";
+        scoresContainer.innerHTML = `
+            <div class="team-result-row" style="justify-content: center;">
+                <strong style="font-size: 3rem;">${score}</strong>
+            </div>
+        `;
+        nextTurnBtn.classList.add('hidden');
+        restartBtn.textContent = "ANA MENÜYE DÖN";
+    }
+}
+
+function finishGameCompletely() {
+    clearInterval(timerId);
+    endTurn();
+    
+    if (gameMode === 'takim') {
+        // En yüksek skoru bul
+        let maxScore = -9999;
+        let winners = [];
+        teams.forEach(t => {
+            if(t.score > maxScore) {
+                maxScore = t.score;
+                winners = [t.name];
+            } else if (t.score === maxScore) {
+                winners.push(t.name);
+            }
+        });
+        
+        if (winners.length > 1) {
+            modalTitle.textContent = `Berabere: ${winners.join(' & ')} (${maxScore} Puan)`;
+        } else {
+            modalTitle.textContent = `Tebrikler ${winners[0]}! Kazandınız! 🎉`;
+        }
+    } else {
+        modalTitle.textContent = "Maç Sonucu!";
+    }
+    
+    nextTurnBtn.classList.add('hidden');
+    restartBtn.textContent = "ANA MENÜYE DÖN";
+}
+
+nextTurnBtn.addEventListener('click', () => {
+    currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+    gameOverModal.classList.add('hidden');
+    startBtn.classList.remove('hidden');
+    endGameBtn.classList.remove('hidden');
+    
+    updateScoreBoardUI();
+    timerEl.textContent = selectedDuration;
+});
+
+// Oyunu bitir butonu (Süre bitimini beklemeden)
+instantEndBtn.addEventListener('click', finishGameCompletely);
+endGameBtn.addEventListener('click', finishGameCompletely);
+
+// En başa dön
+restartBtn.addEventListener('click', () => {
+    clearInterval(timerId);
+    gameOverModal.classList.add('hidden');
+    gameScreen.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+});
+
+startBtn.addEventListener('click', startGameTurn);
+
+// Initial state
+controls.classList.add('hidden');
+endGameBtn.classList.add('hidden');
+
+    </script>
+</body>
+</html>
