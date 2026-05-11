@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Mortality Simulator</title>
+    <style>
+:root {
+    --bg-color: #0f172a;
+    --panel-bg: rgba(30, 41, 59, 0.7);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-hover: #60a5fa;
+    --danger: #ef4444;
+    --success: #10b981;
+    --border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+    gap: 1rem;
+}
+
+header {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: -webkit-linear-gradient(#60a5fa, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.stats-bar {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-box .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-box .value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.controls button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-left: 0.5rem;
+}
+
+.controls button:hover {
+    background: var(--accent-hover);
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+    gap: 1rem;
+    min-height: 0;
+}
+
+.panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.policies-panel {
+    flex: 0 0 300px;
+}
+
+.center-panel {
+    flex: 1;
+}
+
+.stats-panel {
+    flex: 0 0 350px;
+}
+
+h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+
+/* Policy Buttons */
+.policy-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    width: 100%;
+    text-align: left;
+    color: var(--text-main);
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.policy-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.policy-btn.active {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: var(--success);
+}
+
+.policy-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.policy-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Charts */
+.chart-container {
+    flex: 1;
+    min-height: 300px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-container-small {
+    height: 200px;
+    position: relative;
+}
+
+/* Logs */
+.log-container {
+    height: 150px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    overflow-y: auto;
+}
+
+#sim-logs {
+    list-style: none;
+}
+
+#sim-logs li {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+    border-left: 2px solid var(--accent);
+    padding-left: 0.5rem;
+}
+
+/* Risk Factors */
+.risk-factor {
+    margin-bottom: 1rem;
+}
+
+.risk-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.risk-bar-bg {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.risk-bar-fill {
+    height: 100%;
+    background: var(--danger);
+    transition: width 0.5s ease;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+</style>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <h1>Mortality Dynamics Simulator</h1>
+            <div class="stats-bar">
+                <div class="stat-box">
+                    <span class="label">Yıl</span>
+                    <span class="value" id="current-year">2026</span>
+                </div>
+                <div class="stat-box">
+                    <span class="label">Nüfus</span>
+                    <span class="value" id="population">8,000,000,000</span>
+                </div>
+                <div class="stat-box">
+                    <span class="label">Ort. Yaşam Beklentisi</span>
+                    <span class="value" id="life-expectancy">72.5 Yıl</span>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="btn-play">▶ Başlat</button>
+                <button id="btn-pause">⏸ Duraklat</button>
+                <button id="btn-export" style="background-color: var(--success);">📥 CSV İndir</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: Policies -->
+            <aside class="panel policies-panel">
+                <h2>Sağlık Politikaları</h2>
+                <div class="policy-list" id="policy-container">
+                    <!-- Policy buttons will be injected here by JS -->
+                </div>
+            </aside>
+
+            <!-- Center Panel: Core Info / Agent View (Optional) -->
+            <main class="panel center-panel">
+                <h2>Ölüm Nedenleri Dağılımı</h2>
+                <div class="chart-container">
+                    <canvas id="causesChart"></canvas>
+                </div>
+                
+                <div class="log-container">
+                    <h3>Simülasyon Günlükleri</h3>
+                    <ul id="sim-logs">
+                        <li>Simülasyon başlatılmayı bekliyor...</li>
+                    </ul>
+                </div>
+            </main>
+
+            <!-- Right Panel: Graphs & Risk Factors -->
+            <aside class="panel stats-panel">
+                <h2>Aktif Risk Faktörleri</h2>
+                <div id="risk-factors-container">
+                    <!-- Risk factors bars will be injected here -->
+                </div>
+                
+                <h2 style="margin-top: 2rem;">Yaşam Beklentisi Trendi</h2>
+                <div class="chart-container-small">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </aside>
+        </div>
+    </div>
+    <script>
+// SIMULATION ENGINE & DATA
+
+// 1. BASELINE DATA (Hardcoded WHO/IHME estimates to avoid API limits)
+const baselineData = {
+    year: 2026,
+    population: 8000000000,
+    lifeExpectancy: 72.5,
+    mortalityCauses: {
+        cardiovascular: 32.0, 
+        cancer: 18.0,         
+        respiratory: 12.0,    
+        accidents: 8.0,       
+        diabetes_kidney: 7.0, 
+        infections: 10.0,     
+        other: 13.0           
+    },
+    riskFactors: {
+        sedentaryLifestyle: 60,
+        airPollution: 55,       
+        sugarIntake: 65,        
+        calciumDeficiency: 40,  
+        stressLevel: 70,        
+        sleepDeprivation: 50    
+    }
+};
+
+// 2. STATE MANAGEMENT
+let state = JSON.parse(JSON.stringify(baselineData)); 
+let isPlaying = false;
+let simulationInterval;
+const history = {
+    years: [state.year],
+    lifeExpectancy: [state.lifeExpectancy],
+    fullData: [JSON.parse(JSON.stringify(state))]
+};
+
+// 3. POLICIES (Müdahaleler)
+const policies = [
+    {
+        id: "sugar_tax",
+        title: "Şeker Vergisi Uygula",
+        description: "Şeker tüketimini %30 azaltır. Diyabet ölümlerini düşürür, kısa süreli stres yaratır.",
+        active: false,
+        apply: () => {
+            state.riskFactors.sugarIntake *= 0.7;
+            state.riskFactors.stressLevel += 5;
+        },
+        remove: () => {
+            state.riskFactors.sugarIntake /= 0.7;
+            state.riskFactors.stressLevel -= 5;
+        }
+    },
+    {
+        id: "school_milk",
+        title: "Okullarda Süt Dağıtımı",
+        description: "Kalsiyum eksikliğini %50 azaltır. İleri yaş kemik komplikasyonlarını uzun vadede düşürür.",
+        active: false,
+        apply: () => {
+            state.riskFactors.calciumDeficiency *= 0.5;
+        },
+        remove: () => {
+            state.riskFactors.calciumDeficiency /= 0.5;
+        }
+    },
+    {
+        id: "four_day_work",
+        title: "Haftada 4 Gün Mesai",
+        description: "Stresi %40, uyku yoksunluğunu %30 azaltır. Kalp krizi ve iş kazalarını düşürür.",
+        active: false,
+        apply: () => {
+            state.riskFactors.stressLevel *= 0.6;
+            state.riskFactors.sleepDeprivation *= 0.7;
+        },
+        remove: () => {
+            state.riskFactors.stressLevel /= 0.6;
+            state.riskFactors.sleepDeprivation /= 0.7;
+        }
+    },
+    {
+        id: "ban_diesel",
+        title: "Şehir İçi Dizel Yasağı",
+        description: "Hava kirliliğini %35 azaltır. Solunum hastalıkları oranını hızla düşürür.",
+        active: false,
+        apply: () => {
+            state.riskFactors.airPollution *= 0.65;
+        },
+        remove: () => {
+            state.riskFactors.airPollution /= 0.65;
+        }
+    },
+    {
+        id: "fast_food_ban",
+        title: "Fast-Food Reklam Yasağı",
+        description: "Şeker ve işlenmiş gıda tüketimini %20, hareketsizliği %10 azaltır. Uzun vadede obeziteyi engeller.",
+        active: false,
+        apply: () => {
+            state.riskFactors.sugarIntake *= 0.8;
+            state.riskFactors.sedentaryLifestyle *= 0.9;
+        },
+        remove: () => {
+            state.riskFactors.sugarIntake /= 0.8;
+            state.riskFactors.sedentaryLifestyle /= 0.9;
+        }
+    },
+    {
+        id: "free_therapy",
+        title: "Ücretsiz Psikolojik Destek",
+        description: "Kronik stres seviyesini %35 oranında düşürür. Kalp sağlığı ve bağışıklık üzerinde ciddi olumlu etkisi vardır.",
+        active: false,
+        apply: () => {
+            state.riskFactors.stressLevel *= 0.65;
+        },
+        remove: () => {
+            state.riskFactors.stressLevel /= 0.65;
+        }
+    },
+    {
+        id: "active_city",
+        title: "Aktif Şehir Planlaması",
+        description: "Hareketsizliği %40 azaltırken, bisiklet/yaya kullanımı arttığı için hava kirliliğini %15 düşürür.",
+        active: false,
+        apply: () => {
+            state.riskFactors.sedentaryLifestyle *= 0.6;
+            state.riskFactors.airPollution *= 0.85;
+        },
+        remove: () => {
+            state.riskFactors.sedentaryLifestyle /= 0.6;
+            state.riskFactors.airPollution /= 0.85;
+        }
+    },
+    {
+        id: "remote_work",
+        title: "Uzaktan Çalışma Teşviki",
+        description: "Uyku yoksunluğunu %25, hava kirliliğini %20 azaltır; ancak evde kalındığı için hareketsizliği %15 artırır.",
+        active: false,
+        apply: () => {
+            state.riskFactors.sleepDeprivation *= 0.75;
+            state.riskFactors.airPollution *= 0.8;
+            state.riskFactors.sedentaryLifestyle *= 1.15;
+        },
+        remove: () => {
+            state.riskFactors.sleepDeprivation /= 0.75;
+            state.riskFactors.airPollution /= 0.8;
+            state.riskFactors.sedentaryLifestyle /= 1.15;
+        }
+    }
+];
+
+// --- UI AND LOGIC BINDINGS ---
+const els = {
+    year: document.getElementById('current-year'),
+    population: document.getElementById('population'),
+    lifeExp: document.getElementById('life-expectancy'),
+    btnPlay: document.getElementById('btn-play'),
+    btnPause: document.getElementById('btn-pause'),
+    policyContainer: document.getElementById('policy-container'),
+    riskContainer: document.getElementById('risk-factors-container'),
+    logs: document.getElementById('sim-logs')
+};
+
+let causesChart, trendChart;
+
+function initCharts() {
+    const ctxCauses = document.getElementById('causesChart').getContext('2d');
+    causesChart = new Chart(ctxCauses, {
+        type: 'doughnut',
+        data: {
+            labels: ['Kalp Damar', 'Kanser', 'Solunum', 'Kazalar', 'Diyabet/Böbrek', 'Enfeksiyon', 'Diğer'],
+            datasets: [{
+                data: Object.values(state.mortalityCauses),
+                backgroundColor: [
+                    '#ef4444', '#f97316', '#eab308', '#3b82f6', '#8b5cf6', '#10b981', '#64748b'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'right', labels: { color: '#f8fafc' } }
+            }
+        }
+    });
+
+    const ctxTrend = document.getElementById('trendChart').getContext('2d');
+    trendChart = new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+            labels: history.years,
+            datasets: [{
+                label: 'Yaşam Beklentisi',
+                data: history.lifeExpectancy,
+                borderColor: '#3b82f6',
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { min: 65, max: 85, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function renderPolicies() {
+    els.policyContainer.innerHTML = '';
+    policies.forEach((p, index) => {
+        const btn = document.createElement('div');
+        btn.className = `policy-btn ${p.active ? 'active' : ''}`;
+        btn.innerHTML = `
+            <div class="policy-title">${p.title}</div>
+            <div class="policy-desc">${p.description}</div>
+        `;
+        btn.onclick = () => togglePolicy(index);
+        els.policyContainer.appendChild(btn);
+    });
+}
+
+function togglePolicy(index) {
+    const p = policies[index];
+    p.active = !p.active;
+    if(p.active) {
+        p.apply();
+        log(`Politika Yürürlükte: ${p.title}`);
+    } else {
+        p.remove();
+        log(`Politika İptal Edildi: ${p.title}`);
+    }
+    renderPolicies();
+    renderRiskFactors();
+    updateMortalityBasedOnRisks();
+}
+
+function renderRiskFactors() {
+    const labels = {
+        sedentaryLifestyle: "Hareketsizlik",
+        airPollution: "Hava Kirliliği",
+        sugarIntake: "Şeker Tüketimi",
+        calciumDeficiency: "Kalsiyum Eksikliği",
+        stressLevel: "Kronik Stres",
+        sleepDeprivation: "Uyku Yoksunluğu"
+    };
+    
+    els.riskContainer.innerHTML = '';
+    for(let key in state.riskFactors) {
+        let val = Math.min(100, Math.max(0, state.riskFactors[key]));
+        
+        const div = document.createElement('div');
+        div.className = 'risk-factor';
+        
+        let color = 'var(--accent)';
+        if(val > 70) color = 'var(--danger)';
+        else if(val < 40) color = 'var(--success)';
+
+        div.innerHTML = `
+            <div class="risk-header">
+                <span>${labels[key]}</span>
+                <span>${val.toFixed(1)}/100</span>
+            </div>
+            <div class="risk-bar-bg">
+                <div class="risk-bar-fill" style="width: ${val}%; background-color: ${color}"></div>
+            </div>
+        `;
+        els.riskContainer.appendChild(div);
+    }
+}
+
+function log(msg) {
+    const li = document.createElement('li');
+    li.innerText = `[${state.year}] ${msg}`;
+    els.logs.prepend(li);
+    if(els.logs.children.length > 15) {
+        els.logs.removeChild(els.logs.lastChild);
+    }
+}
+
+function updateUI() {
+    els.year.innerText = state.year;
+    els.population.innerText = Math.floor(state.population).toLocaleString();
+    els.lifeExp.innerText = state.lifeExpectancy.toFixed(1) + " Yıl";
+    
+    causesChart.data.datasets[0].data = Object.values(state.mortalityCauses);
+    causesChart.update();
+
+    trendChart.data.labels = history.years;
+    trendChart.data.datasets[0].data = history.lifeExpectancy;
+    trendChart.update();
+    
+    renderRiskFactors();
+}
+
+function updateMortalityBasedOnRisks() {
+    const heartFactor = (state.riskFactors.stressLevel + state.riskFactors.sedentaryLifestyle) / 130; 
+    state.mortalityCauses.cardiovascular = baselineData.mortalityCauses.cardiovascular * heartFactor;
+    
+    const lungFactor = state.riskFactors.airPollution / 55;
+    state.mortalityCauses.respiratory = baselineData.mortalityCauses.respiratory * lungFactor;
+    
+    const diabetesFactor = (state.riskFactors.sugarIntake + state.riskFactors.sedentaryLifestyle) / 125;
+    state.mortalityCauses.diabetes_kidney = baselineData.mortalityCauses.diabetes_kidney * diabetesFactor;
+    
+    const accFactor = state.riskFactors.sleepDeprivation / 50;
+    state.mortalityCauses.accidents = baselineData.mortalityCauses.accidents * accFactor;
+
+    const totalCurrentMortality = Object.values(state.mortalityCauses).reduce((a, b) => a + b, 0);
+    const totalBaselineMortality = Object.values(baselineData.mortalityCauses).reduce((a, b) => a + b, 0);
+    
+    const ratio = totalBaselineMortality / totalCurrentMortality;
+    state.lifeExpectancy = baselineData.lifeExpectancy * ratio;
+}
+
+function tick() {
+    state.year++;
+    state.population *= 1.01; 
+    
+    for(let key in state.riskFactors) {
+        state.riskFactors[key] += (Math.random() * 2 - 1); 
+        state.riskFactors[key] = Math.max(10, Math.min(95, state.riskFactors[key]));
+    }
+    
+    updateMortalityBasedOnRisks();
+    
+    history.years.push(state.year);
+    history.lifeExpectancy.push(state.lifeExpectancy);
+    history.fullData.push(JSON.parse(JSON.stringify(state)));
+    
+    if(Math.random() < 0.05) {
+        log("Şok Olay: Küresel Ekonomik Kriz! Stres seviyeleri fırladı.");
+        state.riskFactors.stressLevel += 15;
+    }
+    
+    updateUI();
+}
+
+els.btnPlay.onclick = () => {
+    if(isPlaying) return;
+    isPlaying = true;
+    els.btnPlay.style.display = 'none';
+    els.btnPause.style.display = 'inline-block';
+    simulationInterval = setInterval(tick, 1000); 
+    log("Simülasyon çalışıyor...");
+};
+
+els.btnPause.onclick = () => {
+    if(!isPlaying) return;
+    isPlaying = false;
+    els.btnPlay.style.display = 'inline-block';
+    els.btnPause.style.display = 'none';
+    clearInterval(simulationInterval);
+    log("Simülasyon duraklatıldı.");
+};
+
+document.getElementById('btn-export').onclick = () => {
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+    csvContent += "Yil,Nufus,Yasam_Beklentisi,KalpDamar,Kanser,Solunum,Kazalar,Diyabet,Enfeksiyon,Stres_Seviyesi,Hava_Kirliligi,Hareketsizlik\n";
+    
+    history.fullData.forEach(row => {
+        let rowData = [
+            row.year,
+            Math.floor(row.population),
+            row.lifeExpectancy.toFixed(2),
+            row.mortalityCauses.cardiovascular.toFixed(2),
+            row.mortalityCauses.cancer.toFixed(2),
+            row.mortalityCauses.respiratory.toFixed(2),
+            row.mortalityCauses.accidents.toFixed(2),
+            row.mortalityCauses.diabetes_kidney.toFixed(2),
+            row.mortalityCauses.infections.toFixed(2),
+            row.riskFactors.stressLevel.toFixed(1),
+            row.riskFactors.airPollution.toFixed(1),
+            row.riskFactors.sedentaryLifestyle.toFixed(1)
+        ];
+        csvContent += rowData.join(",") + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "simulasyon_verileri.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    log("Veriler CSV olarak indirildi.");
+};
+
+els.btnPause.style.display = 'none';
+initCharts();
+renderPolicies();
+renderRiskFactors();
+updateUI();
+
+</script>
+</body>
+</html>
+
