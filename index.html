@@ -1,0 +1,2751 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLOBAL HUMAN MORTALITY RATE AND CAUSES SIMULATION</title>
+    
+    <!-- Google Fonts: Orbitron (Futuristic) and Inter (Clean) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for high-fidelity donut visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --bg-card: rgba(15, 23, 42, 0.65);
+            --border-glow: rgba(6, 189, 244, 0.2);
+            --border-hover: rgba(6, 189, 244, 0.4);
+            
+            --cyan-accent: #06BDF4;
+            --pink-accent: #EC4899;
+            --orange-accent: #F97316;
+            --red-accent: #EF4444;
+            --green-accent: #10B981;
+            --yellow-accent: #EAB308;
+            --gray-text: #94A3B8;
+            --white-text: #F8FAFC;
+            --purple-accent: #8B5CF6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 50%, #0c162d 0%, #030712 100%),
+                linear-gradient(rgba(6, 189, 244, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 189, 244, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            color: var(--white-text);
+            height: 100vh;
+            width: 100vw;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Ambient Glow Filter */
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(6, 189, 244, 0.15);
+            border: 1px solid var(--border-glow);
+            backdrop-filter: blur(12px);
+            background: var(--bg-card);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .neon-glow:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 0 20px rgba(6, 189, 244, 0.25);
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            height: 64px;
+            flex-shrink: 0;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle, var(--cyan-accent) 0%, transparent 70%);
+            border: 2px solid var(--cyan-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px var(--cyan-accent);
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px var(--cyan-accent); }
+            100% { transform: scale(1.05); box-shadow: 0 0 15px var(--cyan-accent); }
+        }
+
+        .logo-icon::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: var(--cyan-accent);
+            border-radius: 50%;
+        }
+
+        header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--white-text);
+            text-shadow: 0 0 10px rgba(6, 189, 244, 0.5);
+            text-transform: uppercase;
+        }
+
+        /* Live Stat Tickers */
+        .header-tickers {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .ticker-box {
+            background: rgba(15, 23, 42, 0.4);
+            border-left: 3px solid var(--cyan-accent);
+            padding: 4px 14px;
+            border-radius: 4px;
+            min-width: 140px;
+        }
+
+        .ticker-box.pink-border {
+            border-left-color: var(--pink-accent);
+        }
+
+        .ticker-box.orange-border {
+            border-left-color: var(--orange-accent);
+        }
+
+        .ticker-label {
+            font-size: 0.65rem;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .ticker-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--white-text);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        }
+
+        .ticker-value.glowing {
+            color: var(--cyan-accent);
+            text-shadow: 0 0 8px rgba(6, 189, 244, 0.5);
+        }
+
+        /* MAIN CONTENT LAYOUT */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            grid-template-rows: 1fr 240px;
+            gap: 24px;
+            flex: 1;
+            min-height: 850px; /* Prevents squishing on small screens */
+        }
+
+        /* LEFT PANEL: FILTERS & POLICIES */
+        .left-panel {
+            grid-row: 1 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 0;
+            overflow-y: auto; /* Scroll if content is taller than grid cell */
+            padding-right: 2px;
+        }
+
+        .panel-section {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--cyan-accent);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(6, 189, 244, 0.2);
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Filters list styling */
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-item label {
+            font-size: 0.7rem;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-item select {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-glow);
+            color: var(--white-text);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .filter-item select:focus {
+            border-color: var(--cyan-accent);
+            box-shadow: 0 0 5px rgba(6, 189, 244, 0.3);
+        }
+
+        /* Policy & Scenario Buttons styling */
+        .scrollable-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 8px 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .toggle-btn:hover {
+            background: rgba(6, 189, 244, 0.05);
+            border-color: rgba(6, 189, 244, 0.3);
+        }
+
+        .toggle-btn.active {
+            background: rgba(6, 189, 244, 0.12);
+            border-color: var(--cyan-accent);
+            box-shadow: 0 0 10px rgba(6, 189, 244, 0.15);
+        }
+
+        .toggle-btn.scenario-btn.active {
+            background: rgba(236, 72, 153, 0.12);
+            border-color: var(--pink-accent);
+            box-shadow: 0 0 10px rgba(236, 72, 153, 0.15);
+        }
+
+        .toggle-btn-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--white-text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-btn-title::after {
+            content: 'OFF';
+            font-size: 0.6rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--gray-text);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+
+        .toggle-btn.active .toggle-btn-title::after {
+            content: 'ON';
+            color: var(--cyan-accent);
+            border-color: var(--cyan-accent);
+        }
+
+        .toggle-btn.scenario-btn.active .toggle-btn-title::after {
+            content: 'ACTIVE';
+            color: var(--pink-accent);
+            border-color: var(--pink-accent);
+        }
+
+        .toggle-btn-desc {
+            font-size: 0.68rem;
+            color: var(--gray-text);
+            line-height: 1.2;
+        }
+
+        /* CENTER PANEL: WORLD MAP & CONTROLS */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            padding-right: 4px; /* Prevent scrollbar overlap */
+        }
+
+        .map-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            position: relative;
+        }
+
+        .map-title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .map-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--white-text);
+        }
+
+        .map-subtitle {
+            font-size: 0.7rem;
+            color: var(--gray-text);
+        }
+
+        /* Map visual container */
+        .map-svg-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: radial-gradient(circle, rgba(15, 23, 42, 0.4) 0%, transparent 80%);
+            border-radius: 6px;
+            overflow: hidden;
+            min-height: 150px;
+            max-height: 340px; /* Cap so timeline row always has space below */
+        }
+
+        .map-svg-container svg {
+            width: 100%;
+            height: 100%;
+            max-height: 380px;
+            filter: drop-shadow(0 0 15px rgba(6, 189, 244, 0.05));
+        }
+
+        .country-path {
+            fill: #1e293b;
+            stroke: #030712;
+            stroke-width: 0.8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .country-path:hover {
+            stroke: var(--cyan-accent);
+            stroke-width: 1.5px;
+            filter: drop-shadow(0 0 8px rgba(6, 189, 244, 0.4));
+        }
+
+        .country-path.selected {
+            stroke: var(--cyan-accent);
+            stroke-width: 2px;
+            filter: drop-shadow(0 0 12px rgba(6, 189, 244, 0.6));
+        }
+
+        /* Color legends on the map */
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border-glow);
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .map-legend.left-legend { left: 20px; }
+        .map-legend.right-legend { right: 20px; }
+
+        .legend-title {
+            font-size: 0.6rem;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-gradient {
+            width: 80px;
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .legend-gradient.red-grad {
+            background: linear-gradient(to right, #fef08a, #f97316, #ef4444, #7f1d1d);
+        }
+
+        .legend-gradient.blue-grad {
+            background: linear-gradient(to right, #e0f2fe, #3b82f6, #1d4ed8, #1e3a8a);
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.55rem;
+            color: var(--gray-text);
+            font-family: 'Orbitron', monospace;
+        }
+
+        /* Tooltip style */
+        .map-tooltip {
+            position: absolute;
+            background: rgba(3, 7, 18, 0.95);
+            border: 1px solid var(--cyan-accent);
+            box-shadow: 0 0 15px rgba(6, 189, 244, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+            min-width: 160px;
+            backdrop-filter: blur(5px);
+        }
+
+        .tooltip-title {
+            font-weight: 700;
+            color: var(--cyan-accent);
+            font-family: 'Orbitron', sans-serif;
+            border-bottom: 1px solid rgba(6, 189, 244, 0.2);
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+
+        .tooltip-row span:first-child {
+            color: var(--gray-text);
+        }
+
+        .tooltip-row span:last-child {
+            font-weight: 600;
+        }
+
+        /* Interactive Timeline Slider at Bottom of Map */
+        .timeline-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            flex-shrink: 0; /* Never let this collapse */
+            min-height: 52px;
+        }
+
+        .timeline-play-btn {
+            background: var(--cyan-accent);
+            border: none;
+            color: var(--bg-dark);
+            height: 36px;
+            min-width: 36px;
+            padding: 0 14px;
+            border-radius: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px rgba(6, 189, 244, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        /* Policy scrollable list */
+        .scrollable-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .timeline-play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(6, 189, 244, 0.6);
+        }
+
+        .timeline-slider-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--cyan-accent);
+            border: 2px solid var(--white-text);
+            box-shadow: 0 0 8px var(--cyan-accent);
+            transition: all 0.1s ease;
+        }
+
+        .timeline-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .timeline-ticks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--gray-text);
+            font-family: 'Orbitron', monospace;
+            position: absolute;
+            width: 100%;
+            bottom: -5px;
+            pointer-events: none;
+        }
+
+        .timeline-ticks span.present-tick {
+            color: var(--cyan-accent);
+            font-weight: 700;
+            text-shadow: 0 0 5px rgba(6, 189, 244, 0.5);
+        }
+
+        /* RIGHT PANEL: CATEGORICAL DISEASES & RISK FACTORS */
+        .right-panel {
+            grid-row: 1 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        /* Donut Chart visual */
+        .ncd-chart-box {
+            flex: 0 0 auto;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .donut-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 220px;
+            padding: 10px;
+        }
+
+        .donut-inner-value {
+            position: absolute;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--cyan-accent);
+            text-shadow: 0 0 8px rgba(6, 189, 244, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .donut-inner-value span {
+            font-size: 0.55rem;
+            color: var(--gray-text);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Infectious & Injuries Progress lists */
+        .progress-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .progress-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.68rem;
+        }
+
+        .progress-name {
+            color: var(--white-text);
+            font-weight: 500;
+        }
+
+        .progress-val {
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.4s ease-out;
+            background: var(--orange-accent);
+            box-shadow: 0 0 5px rgba(249, 115, 22, 0.5);
+        }
+
+        /* Color customizers for right columns */
+        .group-b-header {
+            color: var(--orange-accent) !important;
+            border-bottom-color: rgba(249, 115, 22, 0.2) !important;
+        }
+
+        .group-c-header {
+            color: var(--green-accent) !important;
+            border-bottom-color: rgba(16, 185, 129, 0.2) !important;
+        }
+
+        /* BOTTOM PANEL: DEMOGRAPHIC PYRAMID */
+        .bottom-panel {
+            grid-column: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 16px;
+            min-height: 0;
+        }
+
+        .pyramid-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .pyramid-legend-indicators {
+            display: flex;
+            gap: 16px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .legend-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .indicator-dot.male-dot {
+            background-color: var(--cyan-accent);
+            box-shadow: 0 0 6px var(--cyan-accent);
+        }
+
+        .indicator-dot.female-dot {
+            background-color: var(--pink-accent);
+            box-shadow: 0 0 6px var(--pink-accent);
+        }
+
+        /* Pyramid chart rendering space */
+        .pyramid-scroll-container {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .pyramid-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .pyramid-row {
+            display: contents;
+        }
+
+        .pyramid-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            color: var(--gray-text);
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .pyramid-bar-container {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pyramid-bar {
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease-out;
+        }
+
+        .pyramid-bar.male-bar {
+            background: linear-gradient(90deg, transparent 0%, var(--cyan-accent) 100%);
+            box-shadow: 0 0 6px rgba(6, 189, 244, 0.4);
+            float: right;
+        }
+
+        .pyramid-bar.female-bar {
+            background: linear-gradient(90deg, var(--pink-accent) 0%, transparent 100%);
+            box-shadow: 0 0 6px rgba(236, 72, 153, 0.4);
+            float: left;
+        }
+
+        /* LOG PANEL IN MIDDLE */
+        .log-panel {
+            height: 140px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+
+        .log-terminal {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            color: var(--gray-text);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-right: 4px;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 8px;
+            line-height: 1.3;
+        }
+
+        .log-time {
+            color: var(--cyan-accent);
+            flex-shrink: 0;
+        }
+
+        .log-text {
+            color: var(--white-text);
+        }
+
+        .log-entry.system-alert .log-text {
+            color: var(--red-accent);
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(6, 189, 244, 0.5);
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(6, 189, 244, 0.9);
+        }
+
+        /* Language Toggle Button */
+        .lang-toggle {
+            background: rgba(6, 189, 244, 0.1);
+            border: 1px solid var(--cyan-accent);
+            color: var(--cyan-accent);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            margin-left: 12px;
+            white-space: nowrap;
+        }
+        .lang-toggle:hover {
+            background: rgba(6, 189, 244, 0.25);
+            box-shadow: 0 0 10px rgba(6, 189, 244, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER PANEL -->
+    <header class="neon-glow">
+        <div class="logo-section">
+            <div class="logo-icon"></div>
+            <h1 data-i18n="title">Global Human Mortality Rate and Causes Simulation</h1>
+        </div>
+        <div class="header-tickers">
+            <div class="ticker-box">
+                <span class="ticker-label" data-i18n="globalDeaths">Global Deaths (Since Jan 1)</span>
+                <span class="ticker-value glowing" id="ticker-annual-deaths">0,000,000</span>
+            </div>
+            <div class="ticker-box pink-border">
+                <span class="ticker-label" data-i18n="dailyAverage">Daily Average</span>
+                <span class="ticker-value" id="ticker-daily-average">~165,000</span>
+            </div>
+            <div class="ticker-box orange-border">
+                <span class="ticker-label" data-i18n="topCause">Top Cause</span>
+                <span class="ticker-value" id="ticker-top-cause">Cardiovascular</span>
+            </div>
+            <div class="ticker-box">
+                <span class="ticker-label" data-i18n="population">Population</span>
+                <span class="ticker-value" id="ticker-population">8.12 Billion</span>
+            </div>
+            <div class="ticker-box" style="border-left-color: var(--yellow-accent);">
+                <span class="ticker-label" data-i18n="currentYearLabel">Current Year</span>
+                <span class="ticker-value glowing" id="ticker-current-year" style="color: var(--yellow-accent); text-shadow: 0 0 8px rgba(234, 179, 8, 0.5);">2026</span>
+            </div>
+            <button class="lang-toggle" id="btn-lang-toggle" title="Dil Değiştir / Change Language">TR 🇹🇷</button>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="dashboard-grid">
+        
+        <!-- LEFT PANEL: FILTERS & SCENARIOS & POLICIES -->
+        <aside class="left-panel">
+            
+            <!-- Filters -->
+            <div class="panel-section neon-glow" style="flex: 0 0 auto;">
+                <h2 class="panel-section-title">
+                    <span data-i18n="controlPanel">Control Panel</span>
+                    <button id="btn-export" style="background:var(--cyan-accent); border:none; color:#0b0f19; font-weight:bold; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:10px; text-transform:uppercase;" data-i18n="exportData">💾 İndir</button>
+                    <button id="btn-sources" style="background:var(--purple-accent); border:none; color:white; font-weight:bold; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:10px; text-transform:uppercase; margin-left:10px;">📚 Kaynaklar</button>
+                </h2>
+                
+                <!-- TIMELINE CONTROLS MOVED HERE -->
+                <div class="timeline-container" style="flex-direction: column; align-items: stretch; gap: 15px; background: transparent; padding: 0; border: none; min-height: auto; margin-top: 15px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="timeline-play-btn" id="btn-play-pause" style="flex: 1; padding: 10px; font-size: 1rem;">▶ <span style="font-size: 0.75rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;" data-i18n="playSim">BAŞLAT</span></button>
+                        <button class="timeline-play-btn" id="btn-restart" style="display: none; background: var(--pink-accent); flex: 1; padding: 10px; font-size: 1rem;">🔄 <span style="font-size: 0.75rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;" data-i18n="restartSim">YENİDEN BAŞLAT</span></button>
+                    </div>
+                    <div class="timeline-slider-wrapper" style="width: 100%;">
+                        <input type="range" class="timeline-slider" id="timeline-range" min="1990" max="2500" value="2026">
+                        <div class="timeline-ticks" style="font-size: 0.6rem; padding-top: 6px;">
+                            <span>1990</span>
+                            <span class="present-tick">2026</span>
+                            <span>2100</span>
+                            <span>2300</span>
+                            <span>2500</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-item">
+                        <label data-i18n="yearSelect">Year Select</label>
+                        <select id="select-year"></select>
+                    </div>
+                    <div class="filter-item">
+                        <label data-i18n="regionCountry">Region / Country</label>
+                        <select id="select-region">
+                            <option value="GLOBAL" data-i18n="regionAll">ALL (GLOBAL)</option>
+                            <option value="USA" data-i18n="regionUSA">North America</option>
+                            <option value="BRA" data-i18n="regionBRA">Latin America</option>
+                            <option value="RUS" data-i18n="regionRUS">Russia & C. Asia</option>
+                            <option value="IND" data-i18n="regionIND">South Asia</option>
+                            <option value="CHN" data-i18n="regionCHN">East & SE Asia</option>
+                            <option value="AFR" data-i18n="regionAFR">Africa</option>
+                            <option value="EUR" data-i18n="regionEUR">Europe & Middle East</option>
+                            <option value="AUS" data-i18n="regionAUS">Oceania</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label data-i18n="ageGroup">Age Group</label>
+                        <select id="select-age">
+                            <option value="ALL" data-i18n="ageAll">ALL AGES</option>
+                            <option value="INFANT" data-i18n="ageInfant">Infant (0-4)</option>
+                            <option value="CHILD" data-i18n="ageChild">Child (5-14)</option>
+                            <option value="YOUTH" data-i18n="ageYouth">Youth (15-29)</option>
+                            <option value="ADULT" data-i18n="ageAdult">Adult (30-69)</option>
+                            <option value="ELDERLY" data-i18n="ageElderly">Elderly (70+)</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label data-i18n="incomeLevel">Income Level</label>
+                        <select id="select-income">
+                            <option value="ALL" data-i18n="incomeAll">ALL INCOME GROUPS</option>
+                            <option value="LOW" data-i18n="incomeLow">Low Income</option>
+                            <option value="MIDDLE" data-i18n="incomeMiddle">Middle Income</option>
+                            <option value="HIGH" data-i18n="incomeHigh">High Income</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policies -->
+            <div class="panel-section neon-glow" style="flex: 0 0 auto; min-height: 240px;">
+                <h2 class="panel-section-title" data-i18n="healthPolicies">Health Policies</h2>
+                <div class="scrollable-list" id="policy-list-container">
+                    <!-- Dynamic Policy buttons will inject here -->
+                </div>
+            </div>
+            
+        </aside>
+
+        <!-- CENTER PANEL: MAP, SLIDER, CONSOLE -->
+        <main class="center-panel">
+            
+            <!-- SVG Map Card -->
+            <div class="map-card neon-glow">
+                <div class="map-title-bar">
+                    <div>
+                        <h2 class="map-title" data-i18n="mapTitle">Global Death Density Map</h2>
+                        <span class="map-subtitle" id="map-subtitle-text" data-i18n="mapSubtitle">Global Crude Mortality Rates (Deaths per 1,000 people)</span>
+                    </div>
+                </div>
+
+                <!-- SVG Map Container -->
+                <div class="map-svg-container" id="svg-map-wrapper">
+                    <!-- Inline SVG representing major countries/regions -->
+                    <svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Grid Lines -->
+                        <defs>
+                            <pattern id="map-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.015)" stroke-width="0.5"/>
+                            </pattern>
+                        </defs>
+                        <rect width="1000" height="480" fill="url(#map-grid)" />
+
+                        <!-- Canada (CAN) -->
+                        <path id="map-CAN" class="country-path" d="M120 80h180v50l-40 40h-140zM80 80h30v40H80z" />
+                        <!-- United States (USA) -->
+                        <path id="map-USA" class="country-path" d="M110 130h160l20 20v40l-20 25H110l-15-25v-40z" />
+                        <!-- Rest of Americas / Latin America (ROA) -->
+                        <path id="map-ROA" class="country-path" d="M110 215h70l20 20v50l-45 40h-25l-20-40z" />
+                        <!-- Brazil (BRA) -->
+                        <path id="map-BRA" class="country-path" d="M200 240h75l30 30-10 60-35 45h-35l-25-30 10-60z" />
+                        <!-- Europe (EUR) -->
+                        <path id="map-EUR" class="country-path" d="M430 110h120l30 30v50l-30 20h-70l-50-40z" />
+                        <!-- Africa (AFR) -->
+                        <path id="map-AFR" class="country-path" d="M440 230h90l40 40-10 80-40 60h-50l-40-60 10-85z" />
+                        <!-- Russia (RUS) -->
+                        <path id="map-RUS" class="country-path" d="M520 70h320l20 30-40 65H570l-50-45z" />
+                        <!-- China (CHN) -->
+                        <path id="map-CHN" class="country-path" d="M680 170h120l20 30-30 50h-85l-25-35z" />
+                        <!-- India (IND) -->
+                        <path id="map-IND" class="country-path" d="M660 215h60l20 30-30 50h-35l-25-40z" />
+                        <!-- Australia (AUS) -->
+                        <path id="map-AUS" class="country-path" d="M780 340h90l20 20-30 50h-50l-30-40z" />
+                    </svg>
+                    <!-- Heatmap legends -->
+                    <div class="map-legend left-legend">
+                        <span class="legend-title" data-i18n="crudeMortality">Crude Mortality</span>
+                        <div class="legend-gradient red-grad"></div>
+                        <div class="legend-labels">
+                            <span>0.0</span>
+                            <span>0.4</span>
+                            <span>0.8+</span>
+                        </div>
+                    </div>
+                    <div class="map-legend right-legend">
+                        <span class="legend-title" data-i18n="healthyIndex">Healthy Index</span>
+                        <div class="legend-gradient blue-grad"></div>
+                        <div class="legend-labels">
+                            <span>Low</span>
+                            <span>Mid</span>
+                            <span>High</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tooltip -->
+                    <div class="map-tooltip" id="map-hover-tooltip"></div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Terminal Log Console (Moved to empty grid cell below map) -->
+        <div class="log-panel neon-glow" style="grid-column: 2; grid-row: 2; height: 100%; margin-top: 0;">
+            <div class="panel-section-title" style="margin-bottom: 5px; padding-bottom: 2px;" data-i18n="simLogs">Simulation Engine Logs</div>
+            <div class="log-terminal" id="sim-log-terminal">
+                <!-- Logs dynamically print here -->
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: CATEGORICAL MORTALITY ANALYSIS -->
+        <aside class="right-panel">
+            
+            <!-- Group A: NCDs -->
+            <div class="panel-section neon-glow ncd-chart-box">
+                <h2 class="panel-section-title" data-i18n="ncdTitle">Non-Communicable Diseases (NCDs)</h2>
+                <div class="donut-container">
+                    <canvas id="ncdChartCanvas"></canvas>
+                    <div class="donut-inner-value" id="ncd-total-percentage">
+                        74%
+                        <span data-i18n="ofDeaths">OF DEATHS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group B: Communicable & Neonatal -->
+            <div class="panel-section neon-glow" style="flex: 0 0 auto;">
+                <h2 class="panel-section-title group-b-header" data-i18n="commTitle">Communicable & Neonatal</h2>
+                <div class="progress-list" id="group-b-list">
+                    <!-- Injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Group C: Injuries & Accidents -->
+            <div class="panel-section neon-glow" style="flex: 0 0 auto;">
+                <h2 class="panel-section-title group-c-header" data-i18n="injTitle">Injuries & External Factors</h2>
+                <div class="progress-list" id="group-c-list">
+                    <!-- Injected dynamically -->
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- BOTTOM PANEL: DEMOGRAPHIC AGE/SEX PYRAMID -->
+        <footer class="bottom-panel neon-glow">
+            <div class="pyramid-meta-row">
+                <h2 class="panel-section-title" style="margin-bottom: 0; border: none; padding-bottom: 0;" data-i18n="pyramidTitle">Deaths By Age and Sex (Global Distribution)</h2>
+                <div class="pyramid-legend-indicators">
+                    <div class="legend-indicator">
+                        <div class="indicator-dot male-dot"></div>
+                        <span data-i18n="maleDeaths">Male Deaths</span>
+                    </div>
+                    <div class="legend-indicator">
+                        <div class="indicator-dot female-dot"></div>
+                        <span data-i18n="femaleDeaths">Female Deaths</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pyramid Scroll Container -->
+            <div class="pyramid-scroll-container">
+                <div class="pyramid-grid" id="demographic-pyramid-wrapper">
+                    <!-- Injected dynamically by JS -->
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Sources Modal -->
+    <div id="sources-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div class="neon-glow" style="background:#0b0f19; padding:20px; border-radius:8px; max-width:800px; width:90%; max-height:80vh; overflow-y:auto; position:relative;">
+            <button id="close-sources" style="position:absolute; top:10px; right:10px; background:var(--pink-accent); border:none; color:white; padding:5px 10px; cursor:pointer; border-radius:4px;">X</button>
+            <h2 style="color:var(--cyan-accent); margin-bottom:15px; font-family:'Orbitron', sans-serif;">Model Assumptions &amp; Sources</h2>
+            <div id="sources-content" style="font-size:0.85rem; color:#ccc; line-height:1.5;"></div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT SIMULATION ENGINE -->
+    <script>
+        // --- 0. INTERNATIONALIZATION (i18n) SYSTEM ---
+        let currentLang = 'en'; // Default language
+
+        const LANG = {
+            en: {
+                title: "Global Human Mortality Rate and Causes Simulation",
+                globalDeaths: "Global Deaths (Since Jan 1)",
+                dailyAverage: "Daily Average",
+                topCause: "Top Cause",
+                population: "Population",
+                currentYearLabel: "Current Year",
+                controlPanel: "Control Panel",
+                yearSelect: "Year Select",
+                regionCountry: "Region / Country",
+                ageGroup: "Age Group",
+                incomeLevel: "Income Level",
+                                healthPolicies: "Health Policies",
+                mapTitle: "Global Death Density Map",
+                mapSubtitle: "Global Crude Mortality Rates (Deaths per 1,000 people)",
+                crudeMortality: "Crude Mortality",
+                healthyIndex: "Healthy Index",
+                simLogs: "Simulation Engine Logs",
+                ncdTitle: "Non-Communicable Diseases (NCDs)",
+                ofDeaths: "OF DEATHS",
+                commTitle: "Cardiovascular Details (CVD)",
+                injTitle: "Respiratory & Other Targets",
+                pyramidTitle: "Deaths By Age and Sex (Global Distribution)",
+                maleDeaths: "Male Deaths",
+                femaleDeaths: "Female Deaths",
+                                                                                regionAll: "ALL (GLOBAL)", regionUSA: "North America", regionBRA: "Latin America",
+                regionRUS: "Russia & C. Asia", regionIND: "South Asia", regionCHN: "East & SE Asia",
+                regionAFR: "Africa", regionEUR: "Europe & Middle East", regionAUS: "Oceania",
+                ageAll: "ALL AGES", ageInfant: "Infant (0-4)", ageChild: "Child (5-14)",
+                ageYouth: "Youth (15-29)", ageAdult: "Adult (30-69)", ageElderly: "Elderly (70+)",
+                incomeAll: "ALL INCOME GROUPS", incomeLow: "Low Income",
+                incomeMiddle: "Middle Income", incomeHigh: "High Income",
+                // Chart labels
+                chartCardio: "Cardiovascular", chartCancer: "Cancer",
+                chartResp: "Chronic Respiratory", chartDiabetes: "Diabetes", chartOtherNcd: "Other NCDs",
+                // Progress bar labels
+                ihd: "Ischemic Heart Disease (IHD)", stroke: "Stroke",
+                hyperHeart: "Hypertensive Heart Disease", otherCvd: "Other CVDs",
+                copd: "COPD", lungCancer: "Lung Cancer",
+                type2Diab: "Type 2 Diabetes", lri: "Lower Resp. Infections (LRI)",
+                // Tooltip labels
+                ttIncome: "Income Level:", ttPop: "Population:",
+                ttCdr: "Crude Death Rate:", ttLife: "Avg. Lifespan:",
+                // Population format
+                billion: "Billion", million: "Million",
+                // Logs
+                logStart: "System Initialized. 2026 simulation ready.",
+                logPlay: "Simulation started.",
+                logPause: "Simulation paused.",
+                logEnd: "Simulation reached final year (2500).",
+                logYearChanged: "Year Changed:",
+                logRegionChanged: "Region Filter Changed:",
+                logAgeChanged: "Age Filter Changed:",
+                logIncomeChanged: "Income Filter Changed:",
+                logPolicyOn: "Policy Activated:",
+                logPolicyOff: "Policy Deactivated:",
+                logScenarioA: "AI Scenario A (Global Warming)",
+                logScenarioB: "AI Scenario B (Medical Revolution)",
+                logScenarioWater: "AI Scenario C (Clean Water)",
+                logScenarioMeat: "AI Scenario D (Synthetic Meat)",
+                logActive: "Active", logInactive: "Inactive",
+                logMapSelect: "Region Selected from Map:",
+                playSim: "START",
+                pauseSim: "PAUSE",
+                resumeSim: "RESUME",
+                restartSim: "RESTART",
+                                                                                // Random events
+                evt1: "Pollution Alert: Industrial emissions raised PM 2.5 levels.",
+                evt2: "Health Reform: Countries allocating budget for preventive care.",
+                evt3: "Sociological Trend: Sedentary lifestyle rising due to urbanization.",
+                evt4: "Crisis Warning: Global stress levels spiked!",
+                evt5: "Breakthrough: Major advance in organ transplant technology.",
+                // Policy titles & descriptions
+                pol_sugar_tax: "Sugar Tax",
+                pol_sugar_tax_desc: "Reduces sugar consumption by 30%, significantly lowering diabetes and cardiovascular risks.",
+                                                                                pol_diesel: "Diesel Ban",
+                pol_diesel_desc: "Reduces air pollution by 35%. Directly lowers respiratory disease mortality rates.",
+                pol_fastfood: "Obesity Ad Ban",
+                pol_fastfood_desc: "Reduces sugar intake by 20%, inactivity by 10%, breaking obesity-related cardiac risks.",
+                pol_therapy: "Free Psychological Support",
+                pol_therapy_desc: "Reduces stress by 35%, lowering suicides and stress-related heart attacks.",
+                exportData: "💾 EXPORT CSV",
+                pol_sugar_tax: "Sugar-Sweetened Beverage Tax",
+                pol_sugar_tax_desc: "A 20% SSB tax reduces consumption by ~20%. Decreases Diabetes and CVD mortality.",
+                pol_diesel: "Air Pollution Control (PM2.5)",
+                pol_diesel_desc: "Clean air zones reduce PM2.5 by ~25%. Lowers Ischemic Heart Disease, Stroke, COPD.",
+                pol_tobacco: "Tobacco Control (Tax & Bans)",
+                pol_tobacco_desc: "Aggressive taxation and smoke-free zones reduce smoking prevalence by ~15%.",
+                pol_salt: "Sodium Reduction Strategy",
+                pol_salt_desc: "30% reduction in dietary sodium intake lowers systolic blood pressure, reducing Stroke.",
+                sourcesBtn: "📚 Sources & Assumptions"
+            },
+            tr: {
+                title: "Küresel İnsan Ölüm Oranları ve Nedenleri Simülasyonu",
+                globalDeaths: "Küresel Ölümler (1 Ocak'tan İtibaren)",
+                dailyAverage: "Günlük Ortalama",
+                topCause: "En Sık Neden",
+                population: "Nüfus",
+                currentYearLabel: "Mevcut Yıl",
+                controlPanel: "Kontrol Paneli",
+                yearSelect: "Yıl Seçimi",
+                regionCountry: "Bölge / Ülke",
+                ageGroup: "Yaş Grubu",
+                incomeLevel: "Gelir Seviyesi",
+                                healthPolicies: "Sağlık Politikaları",
+                mapTitle: "Küresel Ölüm Yoğunluğu Haritası",
+                mapSubtitle: "Küresel Kaba Ölüm Hızı (1.000 kişi başına ölümler)",
+                crudeMortality: "Kaba Ölüm Hızı",
+                healthyIndex: "Sağlık Endeksi",
+                simLogs: "Simülasyon Motor Günlükleri",
+                ncdTitle: "Bulaşıcı Olmayan Hastalıklar (Kronik)",
+                ofDeaths: "ÖLÜMLERİN",
+                commTitle: "Kardiyovasküler Hastalıklar (Detaylı)",
+                injTitle: "Solunum ve Diğer Hedef Hastalıklar",
+                pyramidTitle: "Yaş ve Cinsiyete Göre Ölümler (Küresel Dağılım)",
+                maleDeaths: "Erkek Ölümleri",
+                femaleDeaths: "Kadın Ölümleri",
+                                                                                regionAll: "TÜMÜ (KÜRESEL)", regionUSA: "Kuzey Amerika", regionBRA: "Latin Amerika",
+                regionRUS: "Rusya ve Orta Asya", regionIND: "Güney Asya", regionCHN: "Doğu ve GD Asya",
+                regionAFR: "Afrika", regionEUR: "Avrupa ve Orta Doğu", regionAUS: "Okyanusya",
+                ageAll: "TÜM YAŞLAR", ageInfant: "Bebek (0-4)", ageChild: "Çocuk (5-14)",
+                ageYouth: "Genç (15-29)", ageAdult: "Yetişkin (30-69)", ageElderly: "Yaşlı (70+)",
+                incomeAll: "TÜM GELİR GRUPLARI", incomeLow: "Düşük Gelir",
+                incomeMiddle: "Orta Gelir", incomeHigh: "Yüksek Gelir",
+                chartCardio: "Kalp-Damar", chartCancer: "Kanser",
+                chartResp: "Kronik Solunum", chartDiabetes: "Diyabet", chartOtherNcd: "Diğer Kronik",
+                ihd: "İskemik Kalp Hastalığı", stroke: "İnme (Felç)",
+                hyperHeart: "Hipertansif Kalp Hastalığı", otherCvd: "Diğer Kalp Hastalıkları",
+                copd: "KOAH (Kronik Obstrüktif)", lungCancer: "Akciğer Kanseri",
+                type2Diab: "Tip 2 Diyabet", lri: "Alt Solunum Yolu Enfeksiyonu",
+                exportData: "💾 CSV İNDİR",
+                ttIncome: "Gelir Düzeyi:", ttPop: "Nüfus:",
+                ttCdr: "Kaba Ölüm Hızı:", ttLife: "Ort. Ömür:",
+                billion: "Milyar", million: "Milyon",
+                logStart: "Sistem Başlatıldı. 2026 simülasyonu çalışmaya hazır.",
+                logPlay: "Simülasyon başlatıldı.",
+                logPause: "Simülasyon duraklatıldı.",
+                resumeSim: "DEVAM ET",
+                restartSim: "YENİDEN BAŞLAT",
+                logEnd: "Simülasyon son yıla (2500) ulaştı.",
+                logYearChanged: "Yıl Değiştirildi:",
+                logRegionChanged: "Bölge Filtresi Değiştirildi:",
+                logAgeChanged: "Yaş Filtresi Değiştirildi:",
+                logIncomeChanged: "Gelir Filtresi Değiştirildi:",
+                logPolicyOn: "Politika Yürürlükte:",
+                logPolicyOff: "Politika İptal Edildi:",
+                logScenarioA: "Yapay Zeka Senaryosu A (Küresel Isınma)",
+                logScenarioB: "Yapay Zeka Senaryosu B (Tıp Devrimi)",
+                logScenarioWater: "Yapay Zeka Senaryosu C (Temiz Su)",
+                logScenarioMeat: "Yapay Zeka Senaryosu D (Sentetik Et)",
+                logActive: "Aktif", logInactive: "Pasif",
+                logMapSelect: "Haritadan Bölge Seçildi:",
+                playSim: "BAŞLAT",
+                pauseSim: "DURAKLAT",
+                                                                                evt1: "Çevre Kirliliği Alarmı: Sanayi emisyonları PM 2.5 oranını yükseltti.",
+                evt2: "Sağlık Reformu: Ülkeler koruyucu tedavilere bütçe ayırıyor.",
+                evt3: "Sosyolojik Trend: Şehirleşme nedeniyle hareketsizlik artıyor.",
+                evt4: "Kriz Uyarısı: Küresel stres seviyeleri fırladı!",
+                evt5: "Gelişme: Organ nakli teknolojilerinde önemli buluş gerçekleşti.",
+                pol_sugar_tax: "Şeker Vergisi Uygula",
+                pol_sugar_tax_desc: "Şeker tüketimini %30 azaltarak diyabet ve kardiyovasküler yükleri ciddi oranda düşürür.",
+                                                                                pol_diesel: "Dizel Yasağı",
+                pol_diesel_desc: "Hava kirliliğini %35 düşürür. Solunum yolu hastalıkları ölüm oranlarını doğrudan azaltır.",
+                pol_fastfood: "Obezite Reklam Yasağı",
+                pol_fastfood_desc: "Şekerli tüketimi %20, hareketsizliği %10 azaltarak obeziteye bağlı kalp risklerini kırar.",
+                pol_therapy: "Ücretsiz Psikolojik Destek",
+                pol_therapy_desc: "Stres seviyesini %35 düşürerek intiharları ve strese bağlı kalp krizlerini azaltır.",
+                pol_sugar_tax: "Şekerli İçecek Vergisi",
+                pol_sugar_tax_desc: "%20 vergi tüketimi %20 azaltır. Diyabet ve Kardiyovasküler ölümleri düşürür.",
+                pol_diesel: "Hava Kirliliği Azaltımı (PM2.5)",
+                pol_diesel_desc: "Temiz hava bölgeleri PM2.5'i %25 düşürür. Kalp Krizi, İnme ve KOAH riskini azaltır.",
+                pol_tobacco: "Tütün Kontrolü (Vergi & Yasak)",
+                pol_tobacco_desc: "Vergilendirme ve yasaklar sigara içme prevalansını %15 oranında düşürür.",
+                pol_salt: "Sodyum (Tuz) Azaltma Stratejisi",
+                pol_salt_desc: "Diyet sodyumunun %30 azaltılması tansiyonu düşürerek İnme (Felç) ölümlerini azaltır.",
+                sourcesBtn: "📚 Kaynaklar ve Varsayımlar"
+            }
+        };
+
+        function T(key) { return LANG[currentLang][key] || LANG['en'][key] || key; }
+
+        function applyLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const text = T(key);
+                // Only update elements that have NO child elements (leaf nodes)
+                // This prevents wiping out dynamically injected HTML children
+                if (text && el.children.length === 0) el.textContent = text;
+            });
+            // Update language toggle button text
+            const btn = document.getElementById('btn-lang-toggle');
+            if (btn) btn.textContent = currentLang === 'en' ? 'TR \uD83C\uDDF9\uD83C\uDDF7' : 'EN \uD83C\uDDEC\uD83C\uDDE7';
+            // Re-render policies and dashboard with new language
+            // (called separately from window.onload on first load; called here on language switch)
+            if (typeof renderPoliciesPanel === 'function') renderPoliciesPanel();
+            if (typeof updateDashboardUI === 'function') updateDashboardUI();
+        }
+
+        // --- 1. GLOBAL CONSTANTS & DEFINITIONS ---
+        const BRACKETS = [
+            "0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", 
+            "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", 
+            "80-84", "85-89", "90-94", "95-99", "100+"
+        ];
+
+        const REGIONS = {
+            GLOBAL: { name: "ALL (GLOBAL)", income: "MIXED", coords: { x: 500, y: 240 } },
+            USA: { name: "North America", income: "HIGH", coords: { x: 190, y: 150 } },
+            BRA: { name: "Latin America", income: "MIDDLE", coords: { x: 230, y: 290 } },
+            RUS: { name: "Russia & C. Asia", income: "MIDDLE", coords: { x: 650, y: 100 } },
+            IND: { name: "South Asia", income: "MIDDLE", coords: { x: 700, y: 240 } },
+            CHN: { name: "East & SE Asia", income: "HIGH", coords: { x: 740, y: 200 } },
+            AFR: { name: "Africa", income: "LOW", coords: { x: 490, y: 280 } },
+            EUR: { name: "Europe & Middle East", income: "HIGH", coords: { x: 490, y: 140 } },
+            AUS: { name: "Oceania", income: "HIGH", coords: { x: 830, y: 370 } }
+        };
+
+        const POLICIES = [
+            {
+                id: "sugar_tax",
+                titleKey: "pol_sugar_tax",
+                descKey: "pol_sugar_tax_desc",
+                active: false,
+                intensity: 50,
+                source: "WHO SSB Tax Reports (2022)",
+                sourceUrl: "https://www.who.int/news/item/13-12-2022-who-calls-on-countries-to-tax-sugar-sweetened-beverages",
+                targetRisk: "Sugar-Sweetened Beverage (SSB) Consumption",
+                targetDisease: "Type 2 Diabetes, Cardiovascular Diseases",
+                coeffSource: "IHME GBD Population Attributable Fractions (PAF) for High Fasting Plasma Glucose.",
+                assumpType: "Conservative Scenario Assumption based on observed 20% price elasticity.",
+                mechanism: "Up to 20% SSB tax reduces consumption by ~20%. Using GBD PAFs for High Fasting Plasma Glucose, this decreases Diabetes and CVD mortality.",
+                impact: (r, intensity) => { r.ssbConsumption *= (1 - (0.20 * (intensity / 100))); }
+            },
+            {
+                id: "diesel_ban",
+                titleKey: "pol_diesel",
+                descKey: "pol_diesel_desc",
+                active: false,
+                intensity: 50,
+                source: "WHO Air Quality Guidelines",
+                sourceUrl: "https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health",
+                targetRisk: "PM2.5 Ambient Air Pollution",
+                targetDisease: "Ischemic Heart Disease, Stroke, COPD, Lung Cancer, Lower Respiratory Infections",
+                coeffSource: "IHME GBD Relative Risk (RR) curves for PM2.5 exposure.",
+                assumpType: "Moderate Scenario Assumption. Assumes strict urban clean air zones can reduce localized PM2.5 by up to 25%.",
+                mechanism: "Clean air zones reduce PM2.5 by up to ~25%. This directly lowers Relative Risk for Ischemic Heart Disease, Stroke, COPD, Lung Cancer, and LRI.",
+                impact: (r, intensity) => { r.pm25Level *= (1 - (0.25 * (intensity / 100))); }
+            },
+            {
+                id: "tobacco_tax",
+                titleKey: "pol_tobacco",
+                descKey: "pol_tobacco_desc",
+                active: false,
+                intensity: 50,
+                source: "WHO Global Report on Trends in Prevalence of Tobacco Use",
+                sourceUrl: "https://www.who.int/publications/i/item/9789240039322",
+                targetRisk: "Smoking Prevalence",
+                targetDisease: "Lung Cancer, COPD, Ischemic Heart Disease, Stroke",
+                coeffSource: "IHME GBD Relative Risk (RR) for Smoking.",
+                assumpType: "Empirical Data Projection. Assumes MPOWER implementation achieves WHO target of 15% relative reduction.",
+                mechanism: "Aggressive taxation and smoke-free zones reduce smoking prevalence by up to ~15%. Drops mortality in Lung Cancer, COPD, and Ischemic Heart Disease.",
+                impact: (r, intensity) => { r.smokingPrevalence *= (1 - (0.15 * (intensity / 100))); }
+            },
+            {
+                id: "salt_reduction",
+                titleKey: "pol_salt",
+                descKey: "pol_salt_desc",
+                active: false,
+                intensity: 50,
+                source: "WHO SHAKE Technical Package for Salt Reduction",
+                sourceUrl: "https://www.who.int/publications/i/item/WHO-NMH-NVI-16.4",
+                targetRisk: "Dietary Sodium Intake",
+                targetDisease: "Stroke, Hypertensive Heart Disease",
+                coeffSource: "IHME GBD Population Attributable Fraction for High Systolic Blood Pressure.",
+                assumpType: "Empirical Target. Aligns with WHO's global target of 30% reduction in mean population sodium intake.",
+                mechanism: "Up to 30% reduction in dietary sodium intake lowers systolic blood pressure, directly reducing Stroke and Hypertensive Heart Disease mortality.",
+                impact: (r, intensity) => { r.sodiumIntake *= (1 - (0.30 * (intensity / 100))); }
+            },
+            {
+                id: "alcohol_tax",
+                titleKey: "pol_alcohol",
+                descKey: "pol_alcohol_desc",
+                active: false,
+                intensity: 50,
+                source: "WHO Global Status Report on Alcohol and Health",
+                sourceUrl: "https://www.who.int/publications/i/item/9789241565639",
+                targetRisk: "Alcohol Consumption",
+                targetDisease: "Road Injuries, Digestive Cancers, Liver Cirrhosis",
+                coeffSource: "WHO alcohol price elasticity estimates.",
+                assumpType: "Conservative Scenario Assumption. Assumes taxation policies yield up to 20% relative reduction in consumption.",
+                mechanism: "Up to 20% reduction in alcohol consumption via taxation decreases road injuries and digestive cancers.",
+                impact: (r, intensity) => { r.alcoholConsumption = (r.alcoholConsumption || 1.0) * (1 - (0.20 * (intensity / 100))); }
+            },
+            {
+                id: "exercise_infra",
+                titleKey: "pol_exercise",
+                descKey: "pol_exercise_desc",
+                active: false,
+                intensity: 50,
+                source: "WHO Global Action Plan on Physical Activity",
+                sourceUrl: "https://www.who.int/publications/i/item/9789241514187",
+                targetRisk: "Physical Inactivity (Sedentary Lifestyle)",
+                targetDisease: "Ischemic Heart Disease, Type 2 Diabetes",
+                coeffSource: "IHME GBD Relative Risk for Low Physical Activity.",
+                assumpType: "Conservative Scenario Assumption. Infrastructure changes reduce inactivity prevalence by 10%.",
+                mechanism: "Up to 10% reduction in physical inactivity drops IHD and Type 2 Diabetes relative risks.",
+                impact: (r, intensity) => { r.physicalInactivity = (r.physicalInactivity || 0.25) * (1 - (0.10 * (intensity / 100))); }
+            }
+        ];
+
+
+        // --- 2. CORE COHORT-BASED SIMULATION STATE ---
+        let simulationHistory = {};
+
+        function exportDataToCSV() {
+            let csvContent = "Year,Region,Population,TotalDeaths,PreventedDeathsComparedToBaseline,CardioDeaths,CancerDeaths,RespiratoryDeaths,DiabetesDeaths,InfectiousDeaths,InjuryDeaths,PM25_Level,Smoking_Prevalence_Pct,SSB_Consumption_Index,Sodium_Intake_Index,Alcohol_Consumption,Physical_Inactivity,ActivePolicies\n";
+            
+            let activePolNames = POLICIES.filter(p => p.active).map(p => p.id).join("|") || "BASELINE";
+
+            for (let year = 1990; year <= 2500; year++) {
+                if(!simulationHistory[year]) continue;
+                for(let reg in REGIONS) {
+                    if(reg === "GLOBAL") continue;
+                    const data = simulationHistory[year][reg];
+                    if(!data) continue;
+                    
+                    let pop = data.population;
+                    let cardio = Math.floor((data.cardioRate || 0) * pop);
+                    let cancer = Math.floor((data.cancerRate || 0) * pop);
+                    let resp = Math.floor((data.respRate || 0) * pop);
+                    let diabetes = Math.floor((data.diabetesRate || 0) * pop);
+                    let inf = Math.floor((data.infectiousRate || 0) * pop);
+                    let inj = Math.floor((data.injuriesRate || 0) * pop);
+                    
+                    let prevented = 0;
+                    if (data.cohorts && data.riskFactors) {
+                        let basePm25 = (REGIONS[reg].income === 'LOW') ? 45 : (REGIONS[reg].income === 'MIDDLE' ? 35 : 15);
+                        let baseSmoking = (REGIONS[reg].income === 'HIGH') ? 0.15 : 0.25;
+                        let baseSsb = (REGIONS[reg].income === 'HIGH') ? 1.5 : (REGIONS[reg].income === 'MIDDLE' ? 1.2 : 0.5);
+                        let baseSodium = 1.0;
+                        let rBase = { 
+                            pm25Level: basePm25,
+                            smokingPrevalence: baseSmoking,
+                            ssbConsumption: baseSsb,
+                            sodiumIntake: baseSodium,
+                            alcoholConsumption: 1.0,
+                            physicalInactivity: (REGIONS[reg].income === 'HIGH') ? 0.35 : 0.20
+                        };
+                        let baselineData = calculateDeathsForYearState(data.cohorts, rBase, reg, year);
+                        prevented = Math.max(0, Math.floor(baselineData.totalDeaths - data.yearlyDeaths));
+                    }
+
+                    let row = [
+                        year, reg, Math.floor(data.population).toString(),
+                        Math.floor(data.yearlyDeaths).toString(),
+                        prevented.toString(),
+                        cardio, cancer, resp, diabetes, inf, inj,
+                        data.riskFactors && data.riskFactors.pm25Level ? data.riskFactors.pm25Level.toFixed(2) : "",
+                        data.riskFactors && data.riskFactors.smokingPrevalence ? (data.riskFactors.smokingPrevalence*100).toFixed(1) : "",
+                        data.riskFactors && data.riskFactors.ssbConsumption ? data.riskFactors.ssbConsumption.toFixed(2) : "",
+                        data.riskFactors && data.riskFactors.sodiumIntake ? data.riskFactors.sodiumIntake.toFixed(2) : "",
+                        data.riskFactors && data.riskFactors.alcoholConsumption ? data.riskFactors.alcoholConsumption.toFixed(2) : "1.00",
+                        data.riskFactors && data.riskFactors.physicalInactivity ? (data.riskFactors.physicalInactivity*100).toFixed(1) : "",
+                        activePolNames
+                    ];
+                    csvContent += row.join(",") + "\n";
+                }
+            }
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "mortality_simulation_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+            addLogEntry("Data exported to CSV format with scientifically rigorous risk factors.", "info");
+        }
+        let currentYear = 2026;
+        let isPlaying = false;
+        let playInterval = null;
+        let counterTickInterval = null;
+        let ncdChartInstance = null;
+
+        // Active filters state
+        let filterRegion = "GLOBAL";
+        let filterAge = "ALL";
+        let filterIncome = "ALL";
+
+        
+
+        // Live ticking counter variable
+        let lastCounterValue = 0;
+
+
+        // --- 3. MATHEMATICALLY ROBUST ENGINE INITIALIZATION ---
+        // Generates the entire simulation baseline from 1990 to 2500 to support immediate timeline scrubbing!
+        function initializeSimulationEngine() {
+            // A. BASE DATA FOR 2026 FOR ALL COHORTS
+            const initial2026State = {};
+
+            // WHO/UN Real Data: Regional Populations (2026 estimates, broader zones)
+            // Total sums to ~8.10 billion - matching UN World Population Prospects 2024
+            const regionalPopulations = {
+                GLOBAL: 8120000000, // display only
+                USA:  500000000,  // North America (USA 340M + Canada 40M + Mexico 130M + rest)
+                BRA:  660000000,  // Latin America (Brazil 216M + rest of S+C America)
+                RUS:  290000000,  // Russia (144M) + Central Asia (146M)
+                IND: 1900000000,  // South Asia (India 1.43B + Pakistan 240M + Bangladesh 175M + rest)
+                CHN: 2100000000,  // China (1.41B) + SE Asia (700M) + Japan+Korea (180M)
+                AFR: 1450000000,  // Africa total (Sub-Saharan 1.2B + N.Africa 250M)
+                EUR: 1150000000,  // Europe (750M) + Middle East (400M)
+                AUS:   50000000   // Oceania (Australia 27M + rest)
+                // TOTAL: 500+660+290+1900+2100+1450+1150+50 = 8,100M = 8.1B ✓
+            };
+
+            // WHO Real Data: Regional Crude Death Rates (per 1,000 pop, ~2024 - adjusted for broader zones)
+            const whoCrudeDeathRates = {
+                GLOBAL: 7.4,
+                USA: 8.2,   // North America avg
+                BRA: 6.9,   // Latin America avg
+                RUS: 12.5,  // Russia+C.Asia avg
+                IND: 7.8,   // South Asia avg (improved recently)
+                CHN: 7.1,   // East+SE Asia avg
+                AFR: 8.9,   // Africa total avg (N.Africa lower than Sub-Saharan)
+                EUR: 10.0,  // Europe+MiddleEast avg
+                AUS: 5.8    // Oceania
+            };
+
+            // WHO Real Data: Life Expectancy (~2024)
+            const whoLifeExpectancy = {
+                GLOBAL: 73.6,
+                USA: 80.2, BRA: 74.5, RUS: 72.5,
+                IND: 70.5, CHN: 77.0, AFR: 65.0,
+                EUR: 78.5, AUS: 83.5
+            };
+
+            // WHO/UN Real Data: Birth Rates (births per person per year, ~2024)
+            const whoBirthRates = {
+                GLOBAL: 0.0177,
+                USA: 0.0120,  // N.America
+                BRA: 0.0145,  // Latin America
+                RUS: 0.0100,  // Russia+C.Asia
+                IND: 0.0175,  // South Asia
+                CHN: 0.0090,  // East+SE Asia
+                AFR: 0.0300,  // Africa (reduced vs. Sub-Saharan only)
+                EUR: 0.0100,  // Europe+MiddleEast
+                AUS: 0.0130   // Oceania
+            };
+
+            for (let reg in REGIONS) {
+                const totalPop = regionalPopulations[reg];
+                const income = REGIONS[reg].income;
+
+                // Risk factor baselines (WHO 2024 Calibrated)
+                const riskFactors = {
+                    sedentaryLifestyle: income === "HIGH" ? 41 : (income === "MIDDLE" ? 36 : 24), // WHO % inactive
+                    airPollution: reg === "CHN" ? 37 : (reg === "IND" ? 58 : (income === "LOW" ? 25 : 12)), // PM2.5 μg/m³
+                    sugarIntake: income === "HIGH" ? 70 : (income === "MIDDLE" ? 58 : 28), // Proxy for obesity/diabetes risk %
+                    stressLevel: income === "HIGH" ? 65 : 55, // Mental stress proxy
+                    sleepDeprivation: income === "HIGH" ? 40 : 30, // Sleep deprivation proxy
+
+                    // These names are used by the mortality engine and policy buttons.
+                    // Without them, the chart/map calculations become NaN and panels stay empty.
+                    pm25Level: reg === "CHN" ? 37 : (reg === "IND" ? 58 : (income === "LOW" ? 25 : 12)),
+                    smokingPrevalence: income === "HIGH" ? 0.15 : (income === "MIDDLE" ? 0.22 : 0.18),
+                    ssbConsumption: income === "HIGH" ? 1.5 : (income === "MIDDLE" ? 1.2 : 0.5),
+                    sodiumIntake: 1.0
+                };
+
+                // Create demographic age cohorts for both sexes
+                const cohorts = {};
+                let popSum = 0;
+
+                BRACKETS.forEach((bracket, index) => {
+                    // Standard pyramid share base: younger population dominates in developing, older in developed
+                    let bracketShare = 0.05; // default
+                    
+                    if (income === "LOW") {
+                        // High youth population
+                        bracketShare = Math.max(0.01, 0.12 - index * 0.007);
+                    } else if (income === "HIGH") {
+                        // Aging population, bulk in middle age
+                        bracketShare = Math.max(0.02, 0.06 - Math.abs(index - 10) * 0.003);
+                    } else {
+                        // Middle income
+                        bracketShare = Math.max(0.015, 0.08 - index * 0.004);
+                    }
+
+                    const cohortPop = totalPop * bracketShare;
+                    
+                    // Sex split: slightly more boys at birth, women live longer
+                    let maleShare = 0.51; // baseline
+                    if (index > 14) { // elderly
+                        maleShare = Math.max(0.35, 0.51 - (index - 14) * 0.02);
+                    }
+
+                    cohorts[bracket] = {
+                        malePop: cohortPop * maleShare,
+                        femalePop: cohortPop * (1 - maleShare),
+                        maleDeaths: 0,
+                        femaleDeaths: 0
+                    };
+                    popSum += cohortPop;
+                });
+
+                // Normalize populations to match exact totals
+                const normFactor = totalPop / popSum;
+                BRACKETS.forEach(bracket => {
+                    cohorts[bracket].malePop *= normFactor;
+                    cohorts[bracket].femalePop *= normFactor;
+                });
+
+                initial2026State[reg] = {
+                    population: totalPop,
+                    birthRate: whoBirthRates[reg] || 0.017,
+                    riskFactors: riskFactors,
+                    cohorts: cohorts,
+                    yearlyDeaths: 0,
+                    lifeExpectancy: whoLifeExpectancy[reg] || 73.6
+                };
+            }
+
+            simulationHistory[2026] = initial2026State;
+            normalizeYearData(2026); // fill 2026 deaths, cause rates, global totals and pyramid deaths
+
+            // B. BACKWARD INTERPOLATION FOR HISTORICAL DATA (1990 - 2025)
+            // Simulates actual historical trends: higher infectious deaths in the 90s, lower life expectancy, rapid population growth
+            for (let year = 2025; year >= 1990; year--) {
+                const nextState = simulationHistory[year + 1];
+                const yearState = {};
+
+                for (let reg in REGIONS) {
+                    const nextReg = nextState[reg];
+                    
+                    // 1990-2026: population shrinks backwards based on historical growth
+                    const popFactor = 1 / (1 + nextReg.birthRate * 0.95 - 0.009); // simple back-grow
+                    const currentPop = nextReg.population * popFactor;
+
+                    // Backwards risk factors (pollution was slightly higher in high income, sugar lower)
+                    const riskFactors = {};
+                    for (let key in nextReg.riskFactors) {
+                        if (key === "sugarIntake" || key === "sedentaryLifestyle") {
+                            riskFactors[key] = nextReg.riskFactors[key] * 0.985; // lower in past
+                        } else {
+                            riskFactors[key] = nextReg.riskFactors[key] * 1.005; // slightly higher
+                        }
+                    }
+
+                    // Rebuild cohorts backward
+                    const cohorts = {};
+                    BRACKETS.forEach(bracket => {
+                        cohorts[bracket] = {
+                            malePop: nextReg.cohorts[bracket].malePop * popFactor,
+                            femalePop: nextReg.cohorts[bracket].femalePop * popFactor,
+                            maleDeaths: 0,
+                            femaleDeaths: 0
+                        };
+                    });
+
+                    // Historical death calculations
+                    let deathsData = calculateDeathsForYearState(cohorts, riskFactors, reg, year);
+
+                    const totalDeaths = deathsData.totalDeaths;
+
+                    yearState[reg] = {
+                        population: currentPop,
+                        birthRate: nextReg.birthRate * 1.005, // Birth rates were higher in the past
+                        riskFactors: riskFactors,
+                        cohorts: cohorts,
+                        yearlyDeaths: totalDeaths,
+                        lifeExpectancy: nextReg.lifeExpectancy - 0.25, // Past had lower life expectancy
+                        cardioRate: deathsData.cardioDeaths / currentPop,
+                        cancerRate: deathsData.cancerDeaths / currentPop,
+                        respRate: deathsData.respDeaths / currentPop,
+                        diabetesRate: deathsData.diabetesDeaths / currentPop,
+                        infectiousRate: deathsData.infDeaths / currentPop,
+                        injuriesRate: deathsData.injDeaths / currentPop
+                    };
+                }
+
+                simulationHistory[year] = yearState;
+            }
+
+            // C. FORWARD SIMULATION (2027 - 2500)
+            // Pre-generates the baseline projections. Activating policies/scenarios will trigger RE-COMPUTATION
+            // of the future states from the active year onwards!
+            recomputeFutureProjections(2027);
+        }
+
+        
+        function recomputeFutureProjections(startYear) {
+            let lastKnownYear = startYear - 1;
+            
+            for (let year = startYear; year <= 2500; year++) {
+                let yearState = {};
+                const prevYearState = simulationHistory[year - 1];
+
+                let globalPop = 0, globalDeaths = 0;
+                let gCardio = 0, gCancer = 0, gResp = 0, gDiabetes = 0, gInfectious = 0, gInjuries = 0;
+                let gPm25 = 0, gSmoking = 0, gSsb = 0, gSodium = 0;
+
+                for (let reg in REGIONS) {
+                    if (reg === 'GLOBAL') continue;
+                    
+                    let prevReg = prevYearState[reg];
+                    let currentPop = prevReg.population;
+
+                    let growthRate = prevReg.birthRate - (prevReg.yearlyDeaths / currentPop);
+                    if (growthRate < -0.01) growthRate = -0.01;
+                    currentPop = currentPop * (1 + growthRate);
+
+                    let basePm25 = (REGIONS[reg].income === 'LOW') ? 45 : (REGIONS[reg].income === 'MIDDLE' ? 35 : 15);
+                    let baseSmoking = (REGIONS[reg].income === 'HIGH') ? 0.15 : 0.25;
+                    let baseSsb = (REGIONS[reg].income === 'HIGH') ? 1.5 : (REGIONS[reg].income === 'MIDDLE' ? 1.2 : 0.5);
+                    let baseSodium = 1.0;
+
+                    let r = { 
+                        pm25Level: basePm25,
+                        smokingPrevalence: baseSmoking,
+                        ssbConsumption: baseSsb,
+                        sodiumIntake: baseSodium,
+                        alcoholConsumption: 1.0,
+                        physicalInactivity: (REGIONS[reg].income === 'HIGH') ? 0.35 : 0.20,
+                        healthcareAccess: (REGIONS[reg].income === 'HIGH') ? 1.2 : (REGIONS[reg].income === 'MIDDLE' ? 1.0 : 0.7)
+                    };
+
+                    POLICIES.forEach(p => {
+                        if (p.active) p.impact(r, p.intensity);
+                    });
+
+                    const cohorts = {};
+                    BRACKETS.forEach(bracket => {
+                        cohorts[bracket] = {
+                            malePop: prevReg.cohorts[bracket].malePop * (currentPop / prevReg.population),
+                            femalePop: prevReg.cohorts[bracket].femalePop * (currentPop / prevReg.population),
+                            maleDeaths: 0,
+                            femaleDeaths: 0
+                        };
+                    });
+
+                    let deathsData = calculateDeathsForYearState(cohorts, r, reg, year);
+
+                    yearState[reg] = {
+                        population: currentPop,
+                        birthRate: prevReg.birthRate * 0.999, 
+                        riskFactors: r,
+                        cohorts: cohorts,
+                        yearlyDeaths: deathsData.totalDeaths,
+                        lifeExpectancy: prevReg.lifeExpectancy + 0.05,
+                        cardioRate: deathsData.cardioDeaths / currentPop,
+                        cancerRate: deathsData.cancerDeaths / currentPop,
+                        respRate: deathsData.respDeaths / currentPop,
+                        diabetesRate: deathsData.diabetesDeaths / currentPop,
+                        infectiousRate: deathsData.infDeaths / currentPop,
+                        injuriesRate: deathsData.injDeaths / currentPop
+                    };
+
+                    globalPop += currentPop;
+                    globalDeaths += deathsData.totalDeaths;
+                    gCardio += deathsData.cardioDeaths;
+                    gCancer += deathsData.cancerDeaths;
+                    gResp += deathsData.respDeaths;
+                    gDiabetes += deathsData.diabetesDeaths;
+                    gInfectious += deathsData.infDeaths;
+                    gInjuries += deathsData.injDeaths;
+
+                    gPm25 += r.pm25Level * currentPop;
+                    gSmoking += r.smokingPrevalence * currentPop;
+                    gSsb += r.ssbConsumption * currentPop;
+                    gSodium += r.sodiumIntake * currentPop;
+                }
+
+                yearState['GLOBAL'] = {
+                    population: globalPop,
+                    yearlyDeaths: globalDeaths,
+                    cardioRate: gCardio / globalPop,
+                    cancerRate: gCancer / globalPop,
+                    respRate: gResp / globalPop,
+                    diabetesRate: gDiabetes / globalPop,
+                    infectiousRate: gInfectious / globalPop,
+                    injuriesRate: gInjuries / globalPop,
+                    pm25Level: gPm25 / globalPop,
+                    smokingPrevalence: gSmoking / globalPop,
+                    ssbConsumption: gSsb / globalPop,
+                    sodiumIntake: gSodium / globalPop,
+                    lifeExpectancy: prevYearState['GLOBAL'].lifeExpectancy + 0.05,
+                    birthRate: prevYearState['GLOBAL'].birthRate * 0.999
+                };
+
+                simulationHistory[year] = yearState;
+            }
+        }
+        // Calculates deaths based on robust cohort-specific rates, active risks, policies and scenarios
+        function calculateDeathsForYearState(cohorts, riskFactors, reg, year) {
+            const income = REGIONS[reg].income;
+
+            // Base modifiers depending on Income group
+            let infectBaseModifier = income === "LOW" ? 3.8 : (income === "HIGH" ? 0.3 : 1.2);
+            let ncdBaseModifier = income === "HIGH" ? 1.4 : (income === "LOW" ? 0.6 : 1.0);
+            let injuryBaseModifier = income === "LOW" ? 1.5 : (income === "HIGH" ? 0.8 : 1.1);
+
+            // Year scale trend: Infectious diseases reduce naturally over time due to medicine, NCDs rise slightly due to aging
+            const yearShift = (year - 2026);
+            if (yearShift < 0) {
+                infectBaseModifier *= (1 - yearShift * 0.02);
+                ncdBaseModifier *= (1 + yearShift * 0.005);
+            } else {
+                infectBaseModifier *= Math.max(0.4, 1 - yearShift * 0.008);
+                ncdBaseModifier *= (1 + yearShift * 0.002);
+            }
+
+            // -------------------------------------------------------------
+            // NEW SCIENTIFIC RISK FACTOR MODEL (PAF / RR calibrated from IHME GBD)
+            // -------------------------------------------------------------
+            // 1. PM2.5 Air Pollution
+            // WHO Air Quality Guideline is 5 μg/m³. Every 10 μg/m³ excess increases RR by ~15% for COPD/IHD/Stroke/Lung Cancer
+            const pm25Excess = Math.max(0, riskFactors.pm25Level - 5);
+            const pm25Multiplier = 1 + (pm25Excess / 10) * 0.15;
+
+            // 2. Smoking Prevalence
+            // Baseline smoking RR for Lung Cancer is ~15-30, for IHD is ~2-3. We use a blended RR modifier.
+            // If prevalence is 20%, modifier adds relative burden. Let's normalize around a 15% baseline.
+            const smokingExcess = Math.max(0, riskFactors.smokingPrevalence - 0.15);
+            const smokingMultiplier = 1 + (smokingExcess / 0.10) * 0.25;
+
+            // 3. Sugar-Sweetened Beverages (SSB)
+            // Increases BMI and Fasting Plasma Glucose. Modifies Diabetes and CVD.
+            const ssbExcess = Math.max(0, riskFactors.ssbConsumption - 0.5);
+            const ssbMultiplier = 1 + (ssbExcess / 1.0) * 0.20;
+
+            // 4. Sodium Intake
+            // Increases Systolic BP. Modifies Stroke and Hypertensive Heart Disease.
+            const sodiumExcess = Math.max(0, (riskFactors.sodiumIntake || 1.0) - 1.0);
+            const sodiumMultiplier = 1 + (sodiumExcess / 0.5) * 0.15;
+
+            // 5. Alcohol Consumption
+            // Modifies Liver/Digestive Cancers and Injuries.
+            const alcoholExcess = Math.max(0, (riskFactors.alcoholConsumption || 1.0) - 1.0);
+            const alcoholMultiplier = 1 + (alcoholExcess / 0.5) * 0.10;
+            const alcoholInjuryMultiplier = 1 + (alcoholExcess / 0.5) * 0.15;
+
+            // 6. Physical Inactivity
+            const activityExcess = Math.max(0, (riskFactors.physicalInactivity || 0.25) - 0.20);
+            const activityMultiplier = 1 + (activityExcess / 0.15) * 0.12;
+
+            // 7. Healthcare Access (UHC)
+            // Inverse relation: higher access lowers mortality.
+            
+            
+
+            // Apply UHC directly to the base modifiers
+            
+            injuryBaseModifier *= alcoholInjuryMultiplier;
+
+            // Combined NCD Multipliers
+            const cardioMultiplier = pm25Multiplier * smokingMultiplier * ssbMultiplier * sodiumMultiplier * activityMultiplier;
+            const cancerMultiplier = pm25Multiplier * smokingMultiplier * alcoholMultiplier; // lung cancer driven + digestive
+            const respMultiplier = pm25Multiplier * smokingMultiplier; // COPD driven
+            const diabetesMultiplier = ssbMultiplier * activityMultiplier;
+
+            let totalPop = 0;
+            let totalDeaths = 0;
+            let cardioDeaths = 0, cancerDeaths = 0, respDeaths = 0, diabetesDeaths = 0, infDeaths = 0, injDeaths = 0;
+
+            BRACKETS.forEach((bracket, index) => {
+                const cohort = cohorts[bracket];
+                totalPop += cohort.malePop + cohort.femalePop;
+
+                // WHO 2024 Base Death Rates per 1,000 pop
+                let baseMaleRate = 0.5;
+                let baseFemaleRate = 0.4;
+
+                if (index === 0) { // 0-4
+                    baseMaleRate = income === "LOW" ? 38.0 : 8.5;
+                    baseFemaleRate = income === "LOW" ? 32.0 : 7.0;
+                } else if (index === 1) { // 5-9
+                    baseMaleRate = 0.40; baseFemaleRate = 0.33;
+                } else if (index === 2) { // 10-14
+                    baseMaleRate = 0.35; baseFemaleRate = 0.27;
+                } else if (index === 3) { // 15-19
+                    baseMaleRate = 0.78; baseFemaleRate = 0.45;
+                } else if (index === 4) { // 20-24
+                    baseMaleRate = 1.20; baseFemaleRate = 0.55;
+                } else if (index === 5) { // 25-29
+                    baseMaleRate = 1.40; baseFemaleRate = 0.65;
+                } else if (index === 6) { // 30-34
+                    baseMaleRate = 1.75; baseFemaleRate = 0.90;
+                } else if (index === 7) { // 35-39
+                    baseMaleRate = 2.50; baseFemaleRate = 1.30;
+                } else if (index === 8) { // 40-44
+                    baseMaleRate = 3.60; baseFemaleRate = 1.90;
+                } else if (index === 9) { // 45-49
+                    baseMaleRate = 5.50; baseFemaleRate = 2.90;
+                } else if (index === 10) { // 50-54
+                    baseMaleRate = 8.20; baseFemaleRate = 4.40;
+                } else if (index === 11) { // 55-59
+                    baseMaleRate = 13.0; baseFemaleRate = 7.00;
+                } else if (index === 12) { // 60-64
+                    baseMaleRate = 21.0; baseFemaleRate = 11.5;
+                } else if (index === 13) { // 65-69
+                    baseMaleRate = 33.0; baseFemaleRate = 18.5;
+                } else if (index === 14) { // 70-74
+                    baseMaleRate = 52.0; baseFemaleRate = 30.0;
+                } else if (index === 15) { // 75-79
+                    baseMaleRate = 82.0; baseFemaleRate = 50.0;
+                } else if (index === 16) { // 80-84
+                    baseMaleRate = 130.0; baseFemaleRate = 85.0;
+                } else if (index === 17) { // 85-89
+                    baseMaleRate = 200.0; baseFemaleRate = 140.0;
+                } else if (index === 18) { // 90-94
+                    baseMaleRate = 300.0; baseFemaleRate = 220.0;
+                } else if (index === 19) { // 95-99
+                    baseMaleRate = 420.0; baseFemaleRate = 330.0;
+                } else { // 100+
+                    baseMaleRate = 600.0; baseFemaleRate = 490.0;
+                }
+
+                // Split baseline death rates into categories
+                let infectShare = 0.10;
+                let ncdShare = 0.80;
+                let injuryShare = 0.10;
+
+                if (index === 0) { 
+                    infectShare = income === "LOW" ? 0.75 : 0.40;
+                    ncdShare = 1 - infectShare - 0.02;
+                    injuryShare = 0.02;
+                } else if (index >= 3 && index <= 5) { 
+                    injuryShare = 0.60;
+                    infectShare = 0.05;
+                    ncdShare = 0.35;
+                }
+
+                // Apply Multipliers
+                const finalMaleRate = baseMaleRate * (
+                    infectShare * infectBaseModifier + 
+                    ncdShare * ncdBaseModifier * ((cardioMultiplier + cancerMultiplier + respMultiplier + diabetesMultiplier)/4) + 
+                    injuryShare * injuryBaseModifier
+                );
+                const finalFemaleRate = baseFemaleRate * (
+                    infectShare * infectBaseModifier + 
+                    ncdShare * ncdBaseModifier * ((cardioMultiplier + cancerMultiplier + respMultiplier + diabetesMultiplier)/4) + 
+                    injuryShare * injuryBaseModifier
+                );
+
+                cohort.maleDeaths = cohort.malePop * (finalMaleRate / 1000);
+                cohort.femaleDeaths = cohort.femalePop * (finalFemaleRate / 1000);
+
+                let bracketDeaths = cohort.maleDeaths + cohort.femaleDeaths;
+                totalDeaths += bracketDeaths;
+
+                // Accumulate Causes
+                infDeaths += bracketDeaths * infectShare * infectBaseModifier;
+                injDeaths += bracketDeaths * injuryShare * injuryBaseModifier;
+                
+                let bracketNcd = bracketDeaths * ncdShare * ncdBaseModifier;
+                // Distribute NCDs roughly based on risk multipliers
+                cardioDeaths += bracketNcd * 0.45 * cardioMultiplier;
+                cancerDeaths += bracketNcd * 0.30 * cancerMultiplier;
+                respDeaths += bracketNcd * 0.15 * respMultiplier;
+                diabetesDeaths += bracketNcd * 0.10 * diabetesMultiplier;
+            });
+            
+            // Normalize causes to match total deaths exactly
+            let calculatedTotal = infDeaths + injDeaths + cardioDeaths + cancerDeaths + respDeaths + diabetesDeaths;
+            if(calculatedTotal > 0) {
+                let norm = totalDeaths / calculatedTotal;
+                infDeaths *= norm; injDeaths *= norm; cardioDeaths *= norm; 
+                cancerDeaths *= norm; respDeaths *= norm; diabetesDeaths *= norm;
+            }
+
+            return {
+                totalDeaths: totalDeaths,
+                infDeaths: infDeaths,
+                injDeaths: injDeaths,
+                cardioDeaths: cardioDeaths,
+                cancerDeaths: cancerDeaths,
+                respDeaths: respDeaths,
+                diabetesDeaths: diabetesDeaths
+            };
+        }
+
+        // --- 4. DYNAMIC UI RENDERING CONTROLLER ---
+        function updateDashboardUI() {
+            const yearState = simulationHistory[currentYear];
+            
+            // Get filtered metrics
+            const filteredData = getFilteredMetrics(yearState);
+
+            // Update top tickers
+            document.getElementById('ticker-population').innerText = formatBillionPopulation(filteredData.population);
+            document.getElementById('ticker-daily-average').innerText = "~" + Math.floor(filteredData.yearlyDeaths / 365).toLocaleString();
+            document.getElementById('ticker-top-cause').innerText = filteredData.topCause;
+            if(document.getElementById('ticker-current-year')) document.getElementById('ticker-current-year').innerText = currentYear;
+
+            // Trigger and adjust high-speed ticking death counter
+            runTickingDeathCounter(filteredData.yearlyDeaths);
+
+            // Update Map Heatmap colors
+            colorCodeMapHeatmap(yearState);
+
+            // Update Cause Analysis Charts (Right Column)
+            renderNCDDonutChart(filteredData.causes);
+            renderCommunicableProgressBars(filteredData.causes);
+            renderInjuriesProgressBars(filteredData.causes);
+
+            // Update Demographic Pyramid (Bottom Row)
+            renderDemographicPyramid(filteredData.pyramid);
+
+            // Update Map Title text info
+            let mapSubText = `Kaba Ölüm Hızı (1.000 kişi başına ölümler)`;
+            if (filterRegion !== "GLOBAL") {
+                mapSubText = `${REGIONS[filterRegion].name} - ${mapSubText}`;
+            }
+            document.getElementById('map-subtitle-text').innerText = mapSubText;
+        }
+
+        // Pulls specific sub-metrics based on selected dropdown filters
+        function getFilteredMetrics(yearState) {
+            let data = filterRegion === 'ALL' ? yearState['GLOBAL'] : yearState[filterRegion];
+            if (!data) data = yearState['GLOBAL'];
+            
+            // Re-map to UI format using new disease rates (with safe fallbacks)
+            let ncdTotal = (data.cardioRate || 0) + (data.cancerRate || 0) + (data.respRate || 0) + (data.diabetesRate || 0);
+            let commTotal = (data.infectiousRate || 0);
+            let injTotal = (data.injuriesRate || 0);
+            let total = ncdTotal + commTotal + injTotal;
+            if (total === 0) total = 1; // prevent division by zero
+
+            let causes = [
+                { name: "Non-Communicable", val: (ncdTotal / total) * 100 },
+                { name: "Communicable", val: (commTotal / total) * 100 },
+                { name: "Injuries", val: (injTotal / total) * 100 },
+                { name: "Maternal/Neonatal", val: 0 }
+            ];
+
+            return {
+                population: data.population,
+                yearlyDeaths: data.yearlyDeaths,
+                topCause: "Cardiovascular (NCD)",
+                causes: causes
+            };
+        }
+
+        function formatBillionPopulation(num) {
+            if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(2) + " " + T('billion');
+            }
+            return (num / 1000000).toFixed(1) + " " + T('million');
+        }
+
+        function addLogEntry(text, isAlert = false) {
+            const term = document.getElementById('sim-log-terminal');
+            if(!term) return;
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${isAlert ? 'system-alert' : ''}`;
+            
+            const timeStr = `[${currentYear}]`;
+            entry.innerHTML = `
+                <span class="log-time">${timeStr}</span>
+                <span class="log-text">${text}</span>
+            `;
+            term.prepend(entry);
+
+            // Limit logs to 50 items
+            if (term.children.length > 50) {
+                term.removeChild(term.lastChild);
+            }
+        }
+
+        function runTickingDeathCounter(yearlyDeaths) {
+            if (counterTickInterval) clearInterval(counterTickInterval);
+            const tickerEl = document.getElementById('ticker-annual-deaths');
+            if (!tickerEl) return;
+            
+            if (isPlaying) {
+                let tempVal = yearlyDeaths * 0.90;
+                counterTickInterval = setInterval(() => {
+                    tempVal += (yearlyDeaths * 0.10) / 10;
+                    tickerEl.innerText = Math.floor(tempVal).toLocaleString();
+                }, 100);
+            } else {
+                tickerEl.innerText = Math.floor(yearlyDeaths).toLocaleString();
+            }
+        }
+
+        function triggerRandomSimulationEvent() {
+            const rand = Math.random();
+            if (rand < 0.08) {
+                const events = [
+                    T('evt1'), T('evt2'), T('evt3'), T('evt4'), T('evt5')
+                ];
+                const index = Math.floor(Math.random() * events.length);
+                addLogEntry(events[index], index === 3);
+            }
+        }
+
+        function renderPoliciesPanel() {
+            const container = document.getElementById('policy-list-container');
+            if(!container) return;
+            container.innerHTML = '';
+
+            POLICIES.forEach((p, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = `toggle-btn ${p.active ? 'active' : ''}`;
+                wrapper.style.display = 'flex';
+                wrapper.style.flexDirection = 'column';
+                wrapper.style.gap = '8px';
+
+                const topSection = document.createElement('div');
+                topSection.style.cursor = 'pointer';
+                topSection.innerHTML = `
+                    <span class="toggle-btn-title">${T(p.titleKey)}</span>
+                    <span class="toggle-btn-desc">${T(p.descKey)}</span>
+                    <div style="font-size: 0.6rem; color: #888; margin-top: 4px;">Source: <a href="${p.sourceUrl}" target="_blank" style="color: var(--pink-accent); text-decoration: none;" onclick="event.stopPropagation()">${p.source}</a></div>
+                `;
+                topSection.onclick = () => {
+                    p.active = !p.active;
+                    addLogEntry(`${p.active ? T('logPolicyOn') : T('logPolicyOff')} ${T(p.titleKey)} ${p.active ? `(Etki: %${p.intensity})` : ''}`);
+                    
+                    recomputeFutureProjections(currentYear + 1);
+                    updateDashboardUI();
+                    renderPoliciesPanel();
+                };
+
+                const sliderSection = document.createElement('div');
+                sliderSection.style.display = p.active ? 'flex' : 'none';
+                sliderSection.style.alignItems = 'center';
+                sliderSection.style.gap = '10px';
+                sliderSection.style.marginTop = '5px';
+                sliderSection.innerHTML = `
+                    <span style="font-size: 0.65rem; color: var(--gray-text);">Etki:</span>
+                    <input type="range" class="timeline-slider" style="margin-bottom: 0; flex: 1;" min="0" max="100" value="${p.intensity}">
+                    <span style="font-size: 0.65rem; color: var(--cyan-accent); font-weight: bold; width: 35px;">%${p.intensity}</span>
+                `;
+                
+                const slider = sliderSection.querySelector('input');
+                slider.oninput = (e) => {
+                    p.intensity = parseInt(e.target.value);
+                    sliderSection.querySelector('span:last-child').innerText = `%${p.intensity}`;
+                    addLogEntry(`${T('logPolicyOn')} ${T(p.titleKey)} (Etki: %${p.intensity})`);
+                    recomputeFutureProjections(currentYear + 1);
+                    updateDashboardUI();
+                };
+
+                wrapper.appendChild(topSection);
+                wrapper.appendChild(sliderSection);
+                container.appendChild(wrapper);
+            });
+        }
+
+        function setupEventListeners() {
+            // Populate Year Select dropdown
+            const yearSelect = document.getElementById('select-year');
+            if (yearSelect) {
+                for (let y = 1990; y <= 2500; y++) {
+                    const opt = document.createElement('option');
+                    opt.value = y;
+                    opt.innerText = y;
+                    if (y === 2026) opt.selected = true;
+                    yearSelect.appendChild(opt);
+                }
+                yearSelect.onchange = (e) => {
+                    currentYear = parseInt(e.target.value);
+                    document.getElementById('timeline-range').value = currentYear;
+                    addLogEntry(`${T('logYearChanged')} ${currentYear}`);
+                    updateDashboardUI();
+                };
+            }
+
+            // Dropdowns events
+            const regSel = document.getElementById('select-region');
+            if (regSel) regSel.onchange = (e) => {
+                filterRegion = e.target.value;
+                addLogEntry(`${T('logRegionChanged')} ${filterRegion}`);
+                updateDashboardUI();
+            };
+
+            const ageSel = document.getElementById('select-age');
+            if (ageSel) ageSel.onchange = (e) => {
+                filterAge = e.target.value;
+                addLogEntry(`${T('logAgeChanged')} ${filterAge}`);
+                updateDashboardUI();
+            };
+
+            const incSel = document.getElementById('select-income');
+            if (incSel) incSel.onchange = (e) => {
+                filterIncome = e.target.value;
+                addLogEntry(`${T('logIncomeChanged')} ${filterIncome}`);
+                updateDashboardUI();
+            };
+
+            // Export Data Button
+            const expBtn = document.getElementById('btn-export');
+            if(expBtn) expBtn.onclick = exportDataToCSV;
+
+            // Sources Button
+            const srcBtn = document.getElementById('btn-sources');
+            if(srcBtn) srcBtn.onclick = () => {
+                const modal = document.getElementById('sources-modal');
+                const contentDiv = document.getElementById('sources-content');
+                let html = "<ul>";
+                POLICIES.forEach(p => {
+                    html += `<li style="margin-bottom:20px; padding: 10px; background: rgba(255,255,255,0.02); border-left: 3px solid var(--cyan-accent); border-radius: 4px;">
+                        <strong style="color:var(--cyan-accent); font-size:1.1em; display:block; margin-bottom:5px;">${T(p.titleKey)}</strong>
+                        <div style="display:grid; grid-template-columns: 140px 1fr; gap: 5px; font-size: 0.9em;">
+                            <span style="color:#888;">Kaynak / Kayıt:</span> <span><a href="${p.sourceUrl}" target="_blank" style="color:var(--pink-accent); text-decoration: none;">${p.source}</a></span>
+                            <span style="color:#888;">Hedef Risk Faktörü:</span> <span style="color:#ccc;">${p.targetRisk}</span>
+                            <span style="color:#888;">Etkilenen Hastalıklar:</span> <span style="color:#ccc;">${p.targetDisease}</span>
+                            <span style="color:#888;">Katsayı Temeli:</span> <span style="color:#ccc;">${p.coeffSource}</span>
+                            <span style="color:#888;">Varsayım Statüsü:</span> <span style="color:#ccc; font-style:italic;">${p.assumpType}</span>
+                        </div>
+                    </li>`;
+                });
+                html += "</ul><br/><p style='color:#777; font-size:0.8em; line-height: 1.4;'>Not: Bu modeldeki etki katsayıları doğrudan fiyat/prevalans esnekliği (Price/Prevalence Elasticity) ve IHME GBD'nin 'Population Attributable Fraction (PAF)' ve 'Relative Risk (RR)' analizlerinden türetilmiştir. Değerler kesin epidemiyolojik sonuçlar vermese de güçlü bilimsel yaklaşımlarla oluşturulmuş senaryo tabanlı karar destek projeksiyonlarıdır.</p>";
+                contentDiv.innerHTML = html;
+                modal.style.display = 'flex';
+            };
+            
+            const closeSrcBtn = document.getElementById('close-sources');
+            if (closeSrcBtn) closeSrcBtn.onclick = () => {
+                document.getElementById('sources-modal').style.display = 'none';
+            };
+
+            // Timeline slider events
+            const slider = document.getElementById('timeline-range');
+            const playBtn = document.getElementById("btn-play-pause");
+            const restartBtn = document.getElementById("btn-restart");
+
+            if (slider && playBtn && restartBtn) {
+                slider.oninput = (e) => {
+                    currentYear = parseInt(e.target.value);
+                    if (isPlaying) {
+                        clearInterval(playInterval);
+                        isPlaying = false;
+                        playBtn.innerHTML = `▶ <span style="font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;" data-i18n="resumeSim">${T('resumeSim')}</span>`;
+                        restartBtn.style.display = "inline-flex";
+                    }
+                    addLogEntry(`${T('logYearChanged')} ${currentYear}`);
+                    updateDashboardUI();
+                };
+
+                // Restart button logic
+                restartBtn.onclick = () => {
+                    currentYear = 2026;
+                    slider.value = currentYear;
+                    
+                    if (isPlaying) {
+                        clearInterval(playInterval);
+                    }
+                    
+                    isPlaying = true;
+                    playBtn.innerHTML = `⏸ <span style="font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;" data-i18n="pauseSim">${T('pauseSim')}</span>`;
+                    restartBtn.style.display = "none";
+                    
+                    addLogEntry(T('logPlay'));
+                    updateDashboardUI();
+                    
+                    playInterval = setInterval(() => {
+                        if (currentYear >= 2500) {
+                            clearInterval(playInterval);
+                            isPlaying = false;
+                            playBtn.innerHTML = `▶ <span style="font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;" data-i18n="restartSim">${T('restartSim')}</span>`;
+                            addLogEntry(T('logEnd'));
+                            return;
+                        }
+                        currentYear++;
+                        slider.value = currentYear;
+                        if(document.getElementById('select-year')) document.getElementById('select-year').value = currentYear;
+                        updateDashboardUI();
+                    }, 200);
+                };
+
+                // Play / Pause simulation timeline button
+                playBtn.onclick = () => {
+                    if (isPlaying) {
+                        clearInterval(playInterval);
+                        playInterval = null;
+                        isPlaying = false;
+                        playBtn.innerHTML = `▶ <span style="font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;" data-i18n="resumeSim">${T('resumeSim')}</span>`;
+                        restartBtn.style.display = "inline-flex";
+                        addLogEntry(T('logPause'));
+                        updateDashboardUI();
+                    } else {
+                        if (currentYear >= 2500) {
+                            currentYear = 1990;
+                            slider.value = currentYear;
+                        }
+                        isPlaying = true;
+                        playBtn.innerHTML = `⏸ <span style="font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;" data-i18n="pauseSim">${T('pauseSim')}</span>`;
+                        restartBtn.style.display = "none";
+                        
+                        addLogEntry(T('logPlay'));
+                        playInterval = setInterval(() => {
+                            if (currentYear < 2500) {
+                                currentYear++;
+                                slider.value = currentYear;
+                                if(document.getElementById('select-year')) document.getElementById('select-year').value = currentYear;
+                                updateDashboardUI();
+                            } else {
+                                isPlaying = false;
+                                playBtn.innerHTML = `▶ <span style="font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 1px;">${T('playSim')}</span>`;
+                                clearInterval(playInterval);
+                                addLogEntry(T('logEnd'));
+                            }
+                        }, 200);
+                    }
+                };
+            }
+
+            // Interactive SVG Map click selection handlers
+            for (let reg in REGIONS) {
+                const path = document.getElementById(`map-${reg}`);
+                if (!path) continue;
+
+                path.onclick = () => {
+                    filterRegion = reg;
+                    document.getElementById('select-region').value = reg;
+                    addLogEntry(`${T('logMapSelect')} ${REGIONS[reg].name}`);
+                    updateDashboardUI();
+                };
+
+                // Futuristic Hover tooltip handlers
+                path.onmousemove = (e) => {
+                    const tooltip = document.getElementById('map-hover-tooltip');
+                    const yearState = simulationHistory[currentYear];
+                    if(!yearState) return;
+                    const regData = yearState[reg];
+                    if(!regData) return;
+
+                    const crudeRate = (regData.yearlyDeaths / regData.population) * 1000;
+
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.pageX + 15) + 'px';
+                    tooltip.style.top = (e.pageY + 15) + 'px';
+
+                    tooltip.innerHTML = `
+                        <div class="tooltip-title">${REGIONS[reg].name}</div>
+                        <div class="tooltip-row">
+                            <span>${T('ttIncome')}</span>
+                            <span>${REGIONS[reg].income}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span>${T('ttPop')}</span>
+                            <span>${Math.round(regData.population).toLocaleString()}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span>${T('ttCdr')}</span>
+                            <span style="color: var(--orange-accent);">${crudeRate.toFixed(2)}/1k</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span>${T('ttLife')}</span>
+                            <span style="color: var(--cyan-accent);">${(regData.lifeExpectancy||73).toFixed(1)}</span>
+                        </div>
+                    `;
+                };
+
+                path.onmouseleave = () => {
+                    document.getElementById('map-hover-tooltip').style.display = 'none';
+                };
+            }
+        }
+
+
+        // --- 8B. VISUAL RENDERING HELPERS / BUG FIXES ---
+        // The original file called these functions but they were missing.
+        // These functions fill the donut chart, progress bars, demographic pyramid and map heat colors.
+
+        function normalizeRiskFactors(r, income, reg) {
+            if (!r) r = {};
+            if (!Number.isFinite(r.pm25Level)) r.pm25Level = Number.isFinite(r.airPollution) ? r.airPollution : (reg === "IND" ? 58 : (reg === "CHN" ? 37 : (income === "LOW" ? 25 : 15)));
+            if (!Number.isFinite(r.smokingPrevalence)) r.smokingPrevalence = income === "HIGH" ? 0.15 : (income === "MIDDLE" ? 0.22 : 0.18);
+            if (!Number.isFinite(r.ssbConsumption)) r.ssbConsumption = income === "HIGH" ? 1.5 : (income === "MIDDLE" ? 1.2 : 0.5);
+            if (!Number.isFinite(r.sodiumIntake)) r.sodiumIntake = 1.0;
+            return r;
+        }
+
+        function normalizeYearData(year) {
+            const yearState = simulationHistory[year];
+            if (!yearState) return;
+
+            let globalPop = 0, globalDeaths = 0;
+            let gCardio = 0, gCancer = 0, gResp = 0, gDiabetes = 0, gInfectious = 0, gInjuries = 0;
+            let gPm25 = 0, gSmoking = 0, gSsb = 0, gSodium = 0;
+            const globalCohorts = {};
+
+            BRACKETS.forEach(b => {
+                globalCohorts[b] = { malePop: 0, femalePop: 0, maleDeaths: 0, femaleDeaths: 0 };
+            });
+
+            for (let reg in REGIONS) {
+                if (reg === "GLOBAL") continue;
+                const data = yearState[reg];
+                if (!data) continue;
+
+                data.riskFactors = normalizeRiskFactors(data.riskFactors, REGIONS[reg].income, reg);
+
+                const needsCalc = !Number.isFinite(data.yearlyDeaths) || data.yearlyDeaths <= 0 ||
+                    !Number.isFinite(data.cardioRate) || !Number.isFinite(data.infectiousRate) || !Number.isFinite(data.injuriesRate);
+
+                let deathsData = null;
+                if (needsCalc && data.cohorts) {
+                    deathsData = calculateDeathsForYearState(data.cohorts, data.riskFactors, reg, year);
+                    data.yearlyDeaths = deathsData.totalDeaths;
+                    data.cardioRate = deathsData.cardioDeaths / data.population;
+                    data.cancerRate = deathsData.cancerDeaths / data.population;
+                    data.respRate = deathsData.respDeaths / data.population;
+                    data.diabetesRate = deathsData.diabetesDeaths / data.population;
+                    data.infectiousRate = deathsData.infDeaths / data.population;
+                    data.injuriesRate = deathsData.injDeaths / data.population;
+                }
+
+                const cardioDeaths = (data.cardioRate || 0) * data.population;
+                const cancerDeaths = (data.cancerRate || 0) * data.population;
+                const respDeaths = (data.respRate || 0) * data.population;
+                const diabetesDeaths = (data.diabetesRate || 0) * data.population;
+                const infectiousDeaths = (data.infectiousRate || 0) * data.population;
+                const injuriesDeaths = (data.injuriesRate || 0) * data.population;
+
+                globalPop += data.population;
+                globalDeaths += data.yearlyDeaths || (cardioDeaths + cancerDeaths + respDeaths + diabetesDeaths + infectiousDeaths + injuriesDeaths);
+                gCardio += cardioDeaths; gCancer += cancerDeaths; gResp += respDeaths; gDiabetes += diabetesDeaths;
+                gInfectious += infectiousDeaths; gInjuries += injuriesDeaths;
+
+                gPm25 += data.riskFactors.pm25Level * data.population;
+                gSmoking += data.riskFactors.smokingPrevalence * data.population;
+                gSsb += data.riskFactors.ssbConsumption * data.population;
+                gSodium += data.riskFactors.sodiumIntake * data.population;
+
+                if (data.cohorts) {
+                    BRACKETS.forEach(b => {
+                        const c = data.cohorts[b];
+                        if (!c) return;
+                        globalCohorts[b].malePop += c.malePop || 0;
+                        globalCohorts[b].femalePop += c.femalePop || 0;
+                        globalCohorts[b].maleDeaths += c.maleDeaths || 0;
+                        globalCohorts[b].femaleDeaths += c.femaleDeaths || 0;
+                    });
+                }
+            }
+
+            yearState.GLOBAL = {
+                ...(yearState.GLOBAL || {}),
+                population: globalPop,
+                yearlyDeaths: globalDeaths,
+                cardioRate: gCardio / globalPop,
+                cancerRate: gCancer / globalPop,
+                respRate: gResp / globalPop,
+                diabetesRate: gDiabetes / globalPop,
+                infectiousRate: gInfectious / globalPop,
+                injuriesRate: gInjuries / globalPop,
+                riskFactors: {
+                    pm25Level: gPm25 / globalPop,
+                    smokingPrevalence: gSmoking / globalPop,
+                    ssbConsumption: gSsb / globalPop,
+                    sodiumIntake: gSodium / globalPop
+                },
+                cohorts: globalCohorts,
+                lifeExpectancy: (yearState.GLOBAL && yearState.GLOBAL.lifeExpectancy) || 73.6,
+                birthRate: (yearState.GLOBAL && yearState.GLOBAL.birthRate) || 0.0177
+            };
+        }
+
+        function cloneEmptyAggregate() {
+            const cohorts = {};
+            BRACKETS.forEach(b => cohorts[b] = { malePop: 0, femalePop: 0, maleDeaths: 0, femaleDeaths: 0 });
+            return {
+                population: 0, yearlyDeaths: 0,
+                cardioDeaths: 0, cancerDeaths: 0, respDeaths: 0, diabetesDeaths: 0, infectiousDeaths: 0, injuriesDeaths: 0,
+                cohorts
+            };
+        }
+
+        function buildFilteredAggregate(yearState) {
+            normalizeYearData(currentYear);
+
+            if (filterRegion && filterRegion !== "GLOBAL" && yearState[filterRegion]) return yearState[filterRegion];
+
+            if (filterIncome === "ALL") return yearState.GLOBAL;
+
+            const agg = cloneEmptyAggregate();
+            for (let reg in REGIONS) {
+                if (reg === "GLOBAL") continue;
+                if (REGIONS[reg].income !== filterIncome) continue;
+                const d = yearState[reg];
+                if (!d) continue;
+                agg.population += d.population;
+                agg.yearlyDeaths += d.yearlyDeaths;
+                agg.cardioDeaths += (d.cardioRate || 0) * d.population;
+                agg.cancerDeaths += (d.cancerRate || 0) * d.population;
+                agg.respDeaths += (d.respRate || 0) * d.population;
+                agg.diabetesDeaths += (d.diabetesRate || 0) * d.population;
+                agg.infectiousDeaths += (d.infectiousRate || 0) * d.population;
+                agg.injuriesDeaths += (d.injuriesRate || 0) * d.population;
+                BRACKETS.forEach(b => {
+                    const c = d.cohorts && d.cohorts[b];
+                    if (!c) return;
+                    agg.cohorts[b].malePop += c.malePop || 0;
+                    agg.cohorts[b].femalePop += c.femalePop || 0;
+                    agg.cohorts[b].maleDeaths += c.maleDeaths || 0;
+                    agg.cohorts[b].femaleDeaths += c.femaleDeaths || 0;
+                });
+            }
+            if (agg.population > 0) {
+                agg.cardioRate = agg.cardioDeaths / agg.population;
+                agg.cancerRate = agg.cancerDeaths / agg.population;
+                agg.respRate = agg.respDeaths / agg.population;
+                agg.diabetesRate = agg.diabetesDeaths / agg.population;
+                agg.infectiousRate = agg.infectiousDeaths / agg.population;
+                agg.injuriesRate = agg.injuriesDeaths / agg.population;
+            }
+            return agg.population > 0 ? agg : yearState.GLOBAL;
+        }
+
+        function getFilteredMetrics(yearState) {
+            const data = buildFilteredAggregate(yearState);
+
+            const cardio = Math.max(0, (data.cardioRate || 0) * data.population);
+            const cancer = Math.max(0, (data.cancerRate || 0) * data.population);
+            const resp = Math.max(0, (data.respRate || 0) * data.population);
+            const diabetes = Math.max(0, (data.diabetesRate || 0) * data.population);
+            const infectious = Math.max(0, (data.infectiousRate || 0) * data.population);
+            const injuries = Math.max(0, (data.injuriesRate || 0) * data.population);
+            const totalDeaths = Math.max(1, data.yearlyDeaths || (cardio + cancer + resp + diabetes + infectious + injuries));
+
+            const pct = v => (v / totalDeaths) * 100;
+
+            const ncdTotal = cardio + cancer + resp + diabetes;
+            const causes = {
+                ncdTotalPct: pct(ncdTotal),
+                ncd: [
+                    { name: T("chartCardio"), val: pct(cardio), raw: cardio },
+                    { name: T("chartCancer"), val: pct(cancer), raw: cancer },
+                    { name: T("chartResp"), val: pct(resp), raw: resp },
+                    { name: T("chartDiabetes"), val: pct(diabetes), raw: diabetes },
+                    { name: T("chartOtherNcd"), val: Math.max(0, pct(ncdTotal) - pct(cardio + cancer + resp + diabetes)), raw: 0 }
+                ],
+                communicable: [
+                    { name: T("ihd"), val: pct(cardio * 0.45) },
+                    { name: T("stroke"), val: pct(cardio * 0.35) },
+                    { name: T("hyperHeart"), val: pct(cardio * 0.10) },
+                    { name: T("otherCvd"), val: pct(cardio * 0.10) }
+                ],
+                injuries: [
+                    { name: T("copd"), val: pct(resp * 0.60) },
+                    { name: T("lungCancer"), val: pct(cancer * 0.20) },
+                    { name: T("type2Diab"), val: pct(diabetes * 0.95) },
+                    { name: T("lri"), val: pct(infectious * 0.30) }
+                ]
+            };
+
+            let top = causes.ncd.concat(causes.communicable, causes.injuries).sort((a,b) => b.val - a.val)[0];
+
+            return {
+                population: data.population || 0,
+                yearlyDeaths: totalDeaths,
+                topCause: top ? top.name : "Cardiovascular",
+                causes,
+                pyramid: data.cohorts || {}
+            };
+        }
+
+        function renderNCDDonutChart(causes) {
+            const canvas = document.getElementById("ncdChartCanvas");
+            if (!canvas || !causes || !causes.ncd) return;
+
+            const center = document.getElementById("ncd-total-percentage");
+            if (center) center.innerHTML = `${Math.round(causes.ncdTotalPct)}%<span>${T("ofDeaths")}</span>`;
+
+            if (typeof Chart === "undefined") {
+                canvas.style.display = "none";
+                return;
+            }
+
+            const labels = causes.ncd.map(x => x.name);
+            const values = causes.ncd.map(x => Math.max(0.1, x.val));
+            const colors = ["#06BDF4", "#EC4899", "#F97316", "#EAB308", "#8B5CF6"];
+
+            if (ncdChartInstance) ncdChartInstance.destroy();
+            ncdChartInstance = new Chart(canvas, {
+                type: "doughnut",
+                data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor: "#030712", borderWidth: 2 }] },
+                options: {
+                    animation: { duration: isPlaying ? 0 : 500 },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "68%",
+                    plugins: {
+                        legend: { position: "bottom", labels: { color: "#94A3B8", boxWidth: 10, font: { size: 10 } } },
+                        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw.toFixed(1)}%` } }
+                    }
+                }
+            });
+        }
+
+        function progressBarHTML(item, colorVar) {
+            const width = Math.max(2, Math.min(100, item.val));
+            return `
+                <div class="progress-item">
+                    <div class="progress-meta">
+                        <span class="progress-name">${item.name}</span>
+                        <span class="progress-val" style="color:${colorVar};">${item.val.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width:${width}%; background:${colorVar}; box-shadow:0 0 6px ${colorVar};"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCommunicableProgressBars(causes) {
+            const list = document.getElementById("group-b-list");
+            if (!list || !causes || !causes.communicable) return;
+            list.innerHTML = causes.communicable.map(x => progressBarHTML(x, "var(--orange-accent)")).join("");
+        }
+
+        function renderInjuriesProgressBars(causes) {
+            const list = document.getElementById("group-c-list");
+            if (!list || !causes || !causes.injuries) return;
+            list.innerHTML = causes.injuries.map(x => progressBarHTML(x, "var(--green-accent)")).join("");
+        }
+
+        function renderDemographicPyramid(cohorts) {
+            const wrapper = document.getElementById("demographic-pyramid-wrapper");
+            if (!wrapper || !cohorts) return;
+
+            let maxDeaths = 1;
+            BRACKETS.forEach(b => {
+                const c = cohorts[b] || {};
+                maxDeaths = Math.max(maxDeaths, c.maleDeaths || 0, c.femaleDeaths || 0);
+            });
+
+            wrapper.innerHTML = "";
+            [...BRACKETS].reverse().forEach(b => {
+                const c = cohorts[b] || {};
+                const maleW = Math.max(1, ((c.maleDeaths || 0) / maxDeaths) * 100);
+                const femaleW = Math.max(1, ((c.femaleDeaths || 0) / maxDeaths) * 100);
+                wrapper.insertAdjacentHTML("beforeend", `
+                    <div class="pyramid-bar-container"><div class="pyramid-bar male-bar" style="width:${maleW}%"></div></div>
+                    <div class="pyramid-label">${b}</div>
+                    <div class="pyramid-bar-container"><div class="pyramid-bar female-bar" style="width:${femaleW}%"></div></div>
+                `);
+            });
+        }
+
+        function mortalityColor(rate) {
+            // rate = deaths per 1,000 population
+            if (!Number.isFinite(rate)) return "#1e293b";
+            if (rate < 4) return "#fef08a";
+            if (rate < 7) return "#f97316";
+            if (rate < 10) return "#ef4444";
+            return "#7f1d1d";
+        }
+
+        function colorCodeMapHeatmap(yearState) {
+            normalizeYearData(currentYear);
+
+            for (let reg in REGIONS) {
+                if (reg === "GLOBAL") continue;
+                const path = document.getElementById(`map-${reg}`);
+                const d = yearState && yearState[reg];
+                if (!path || !d || !d.population) continue;
+                const rate = (d.yearlyDeaths / d.population) * 1000;
+                path.style.fill = mortalityColor(rate);
+                path.style.opacity = filterRegion === "GLOBAL" || filterRegion === reg ? "1" : "0.45";
+                path.classList.toggle("selected", filterRegion === reg);
+            }
+
+            // Map shapes that do not have a separate region in the model.
+            const can = document.getElementById("map-CAN");
+            if (can && yearState.USA) can.style.fill = mortalityColor((yearState.USA.yearlyDeaths / yearState.USA.population) * 1000);
+            const roa = document.getElementById("map-ROA");
+            if (roa && yearState.BRA) roa.style.fill = mortalityColor((yearState.BRA.yearlyDeaths / yearState.BRA.population) * 1000);
+        }
+
+        // --- 9. STARTUP ENTRY POINT ---
+        window.onload = () => {
+            // 1. Build simulation data
+            initializeSimulationEngine();
+            // 2. Wire up all event listeners
+            setupEventListeners();
+            // 3. Render policies panel FIRST (before language apply)
+            renderPoliciesPanel();
+            // 4. Update all chart/map UI with initial data
+            updateDashboardUI();
+            // 5. Apply language LAST so all dynamic elements exist first
+            applyLanguage();
+            // 6. Initial log
+            addLogEntry(T('logStart'));
+            // Language toggle button
+            document.getElementById('btn-lang-toggle').onclick = () => {
+                currentLang = currentLang === 'en' ? 'tr' : 'en';
+                applyLanguage();
+            };
+        };
+
+    </script>
+</body>
+</html>
